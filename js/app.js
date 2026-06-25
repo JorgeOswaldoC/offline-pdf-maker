@@ -33,7 +33,7 @@
   }
 
   function isFichaComplete(ficha) {
-    return !!(ficha.cueva && ficha.punto && ficha.fecha);
+    return !!(ficha.cueva && ficha.punto && ficha.fecha && ficha.horaInicio);
   }
 
   function debounce(fn, ms) {
@@ -319,7 +319,7 @@
     if (id === 'new') {
       ficha = {
         id: crypto.randomUUID(),
-        cueva: '', punto: '', fecha: '', horaInicio: '', horaFin: '',
+        cueva: '', punto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '',
         agua: '', aguaTipo: { corriendo: null, estancada: null },
         seccionTransversal: '',
         parametros: { humedad: false, temperatura: false, presion: false, velViento: false, co2: false },
@@ -381,20 +381,24 @@
             <label for="f-cueva">Cueva <span style="color:var(--danger)">*</span></label>
             <input type="text" id="f-cueva" name="cueva" value="${esc(f.cueva)}" placeholder="Nombre de la cueva" autocomplete="off">
           </div>
+          <div class="field">
+            <label for="f-punto">Punto <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="f-punto" name="punto" value="${esc(f.punto)}" placeholder="P0, P1, etc." autocomplete="off">
+          </div>
           <div class="field-row">
             <div class="field">
-              <label for="f-punto">Punto <span style="color:var(--danger)">*</span></label>
-              <input type="text" id="f-punto" name="punto" value="${esc(f.punto)}" placeholder="P0, P1, etc." autocomplete="off">
+              <label for="f-fecha">Fecha de inicio <span style="color:var(--danger)">*</span></label>
+              <input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}">
             </div>
             <div class="field">
-              <label for="f-fecha">Fecha <span style="color:var(--danger)">*</span></label>
-              <input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}">
+              <label for="f-hora-inicio">Hora de inicio <span style="color:var(--danger)">*</span></label>
+              <input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label for="f-hora-inicio">Hora de inicio</label>
-              <input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}">
+              <label for="f-fecha-fin">Fecha de fin</label>
+              <input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}">
             </div>
             <div class="field">
               <label for="f-hora-fin">Hora de fin</label>
@@ -711,7 +715,7 @@
     const ficha = {};
 
     // Text fields
-    ['cueva', 'punto', 'fecha', 'horaInicio', 'horaFin', 'seccionTransversal', 'observaciones'].forEach(name => {
+    ['cueva', 'punto', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'seccionTransversal', 'observaciones'].forEach(name => {
       const el = document.querySelector(`[name="${name}"]`) || document.getElementById(`f-${name}`) || document.getElementById(`f-${camelToKebab(name)}`);
       if (el) ficha[name] = el.value;
     });
@@ -720,6 +724,7 @@
     ficha.cueva = document.getElementById('f-cueva')?.value ?? ficha.cueva;
     ficha.punto = document.getElementById('f-punto')?.value ?? ficha.punto;
     ficha.fecha = document.getElementById('f-fecha')?.value ?? ficha.fecha;
+    ficha.fechaFin = document.getElementById('f-fecha-fin')?.value ?? ficha.fechaFin;
     ficha.horaInicio = document.getElementById('f-hora-inicio')?.value ?? ficha.horaInicio;
     ficha.horaFin = document.getElementById('f-hora-fin')?.value ?? ficha.horaFin;
     ficha.seccionTransversal = document.getElementById('f-seccion')?.value ?? ficha.seccionTransversal;

@@ -140,7 +140,7 @@ const PDFGen = (() => {
 
     autoTable([
       [ labelCell('Cueva'), valueCell(ficha.cueva),  labelCell('Punto'), valueCell(ficha.punto) ],
-      [ labelCell('Fecha'), { content: formatDate(ficha.fecha), colSpan: 3 } ],
+      [ labelCell('Fecha inicio'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha fin'), valueCell(formatDate(ficha.fechaFin)) ],
       [ labelCell('Hora inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora fin'), valueCell(formatTime(ficha.horaFin)) ],
       [ labelCell('Agua'),        ynCell(aguaVal),
         labelCell('Tipo'),        valueCell(ficha.agua === 'si' ? aguaTipoSummary(ficha) : '—') ],
