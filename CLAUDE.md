@@ -81,7 +81,7 @@ When already installed (`isInStandaloneMode()`), the menu item is shown disabled
 
 ## Service Worker (`sw.js`)
 
-Cache name is currently `ficha-medicion-v6`. **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
+The current cache name is defined by `CACHE_NAME` in `sw.js` (`ficha-medicion-v8` at this revision). **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
 
 The app also exposes a **"Limpiar caché y datos"** option in the home ⋮ menu (`clearAllData()` in `app.js`) which deletes all IndexedDB records, clears all SW caches, and unregisters the SW.
 
