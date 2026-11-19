@@ -2,7 +2,7 @@
 
 App móvil para registrar mediciones de cuevas y radón. Funciona **100% offline** una vez instalada — sin conexión a internet, sin servidores, sin cuentas.
 
-🔗 **[Abrir la app](https://hernanx21.github.io/pdf-form-maker)**
+🔗 **[Abrir la app](https://hernanx21.github.io/offline-pdf-maker/)**
 
 ---
 
@@ -11,7 +11,7 @@ App móvil para registrar mediciones de cuevas y radón. Funciona **100% offline
 Al iniciar, elige entre dos colecciones locales de fichas:
 
 - **Cuevas:** conserva el formulario de medición existente.
-- **Radón:** registra sitio, provincia, cantón, parroquia, punto, fechas y horarios; también incluye parámetros ambientales, equipos, observaciones y fotografías.
+- **Radón:** reúne datos generales obligatorios, características de la vivienda con esquemas del nivel respecto al terreno y datos del electreto y la medición; las coordenadas se pueden editar u obtener desde el GPS.
 
 Cada colección mantiene su propia lista y permite exportar PDF y JSON.
 
@@ -19,12 +19,21 @@ La ficha de Cuevas incluye:
 
 | Sección | Contenido |
 |---|---|
-| **1. Detalles de cueva** | Nombre, punto, fecha, horario, presencia y tipo de agua, sección transversal |
+| **1. Detalles de cueva** | Nombre, provincia y cantón manuales, punto, fecha, horario, presencia y tipo de agua, sección transversal |
 | **2. Parámetros ambientales** | Humedad, temperatura, presión, velocidad del viento, CO₂ |
-| **3. Equipos de radiación ionizante** | AlphaE, GammaScout, GMQ-GMC+600, Dosímetros, Sonda Beta |
-| **4. Equipos adicionales** | Medidor de radiación cósmica |
+| **3. Equipos de radiación ionizante** | AlphaE, GammaScout, Dosímetros, SaphyRAD y selección de sonda (Sin sonda, AB16 o GSP145) |
+| **4. Equipos adicionales** | Medidor de radiación cósmica y campo para otro equipo |
 | **5. Observaciones** | Notas libres de campo |
 | **Fotografías** | Fotos adjuntas almacenadas junto a la ficha |
+
+La ficha de Radón incluye:
+
+| Sección | Contenido |
+|---|---|
+| **1. Datos Generales** | Identificación, ubicación territorial, código de casa, número de cuadra y coordenadas GPS |
+| **2. Datos de la vivienda** | Tipología, posición del piso más bajo con esquema, año, terrenos, materiales, climatización, humedad, grietas y uso del sótano o piso semienterrado |
+| **3. Datos de medición** | Electreto, fechas, horas, voltajes, tipo de espacio y piso de medición |
+| **4–5** | Equipos adicionales de medición de radiación ionizante (AlphaE, GammaScout y SaphyRAD), observaciones y fotografías |
 
 Cada ficha se puede exportar a **PDF** (formato que replica la ficha Excel original) o a **JSON** para respaldo y transferencia entre dispositivos.
 
@@ -55,7 +64,7 @@ La app se puede instalar como una app nativa desde el navegador — sin pasar po
 ### Crear una ficha
 1. Elige **Cuevas** o **Radón** en la pantalla inicial.
 2. Toca el botón **+** en la lista correspondiente.
-3. Completa las secciones del formulario. Provincia, cantón y parroquia en Radón son campos de texto libre.
+3. Completa las secciones del formulario. En Radón, puedes escribir las coordenadas o usar el GPS; los campos marcados con `*` son obligatorios para exportar el PDF.
 4. Los datos se guardan automáticamente mientras escribís — no hay botón "Guardar"
 
 ### Navegar las secciones

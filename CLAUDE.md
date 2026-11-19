@@ -49,14 +49,14 @@ Photos are stored as raw `Blob` objects (not base64) in IndexedDB. They are only
                  // aguaTipoVal(f, key) in app.js and getAguaTipo(ficha, key) in pdf.js to read
   seccionTransversal,
   parametros:          { humedad, temperatura, presion, velViento, co2 },
-  equiposRadiacion:    { alphaE, gammaScout, gmqGmc600, dosimetros, sondaBeta },
-  equiposAdicionales:  { medidorRadiacionCosmica },
+  equiposRadiacion:    { alphaE, gammaScout, dosimetros, saphyRad, saphyRadSonda },
+  equiposAdicionales:  { medidorRadiacionCosmica, otroEquipo },
   // All boolean fields use true | false | null (null = user has not selected yet)
   observaciones
 }
 ```
 
-Radon records additionally use `sitio`, `provincia`, `canton`, and `parroquia` as text values. PDF/JSON export and collection lists branch on `tipo`.
+Radón records use `nombresCompletos`, `provincia`, `canton`, `parroquia`, `barrio`, `codigoCasa`, `numeroCuadra`, `latitud`, and `longitud`, plus housing and electret-measurement fields. Cuevas records also use free-text `provincia` and `canton`. In Cuevas, `equiposRadiacion.saphyRadSonda` stores `Sin sonda`, `AB16`, or `GSP145` when SaphyRAD is selected. PDF/JSON export and collection lists branch on `tipo`; Radón uses AlphaE, GammaScout, and SaphyRAD.
 
 `collectFormData()` in `app.js` reads the live DOM to build this object. Toggle Sí/No buttons write directly to the in-memory `ficha` object via `setNestedValue()` using dot-path strings (e.g. `"parametros.humedad"`), then `autoSave()` persists to IndexedDB.
 
@@ -84,7 +84,7 @@ When already installed (`isInStandaloneMode()`), the menu item is shown disabled
 
 ## Service Worker (`sw.js`)
 
-The current cache name is defined by `CACHE_NAME` in `sw.js` (`ficha-medicion-v9` at this revision). **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
+The current cache name is defined by `CACHE_NAME` in `sw.js` (`ficha-medicion-v18` at this revision). **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
 
 The app also exposes a **"Limpiar caché y datos"** option in the home ⋮ menu (`clearAllData()` in `app.js`) which deletes all IndexedDB records, clears all SW caches, and unregisters the SW.
 
