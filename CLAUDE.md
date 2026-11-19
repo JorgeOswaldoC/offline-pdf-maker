@@ -24,7 +24,7 @@ Static PWA (no framework, no bundler, no backend). Hosted on GitHub Pages via `/
 4. `js/pdf.js` → declares global `PDFGen`, depends on `jspdf`
 5. `js/app.js` → main app, depends on `DB` and `PDFGen`
 
-**Routing:** Hash-based SPA. `#home` (or empty) → home screen; `#form?id=<uuid>` → edit form; `#form?id=new` → new ficha (pre-creates a DB record immediately so photo blobs can reference it by UUID before the URL reflects it).
+**Routing:** Hash-based SPA. Empty hash / `#start` → collection selector; `#home?type=cave|radon` → filtered collection; `#form?id=<uuid>&type=cave|radon` → edit form; `#form?id=new&type=...` → new ficha. Old `#home` and fichas without a type remain in Cuevas. New fichas are pre-created so photo blobs can reference them immediately.
 
 **State:** No global state object. `currentFichaId` in `app.js` tracks the active form. All persistent state lives in IndexedDB.
 
@@ -41,6 +41,7 @@ Photos are stored as raw `Blob` objects (not base64) in IndexedDB. They are only
 ```js
 {
   id, createdAt, updatedAt,
+  tipo,          // 'cave' | 'radon'; absent on legacy records means 'cave'
   cueva, punto, fecha, horaInicio, horaFin,
   agua,          // 'si' | 'no' | ''
   aguaTipo,      // { corriendo: true|false|null, estancada: true|false|null }
@@ -54,6 +55,8 @@ Photos are stored as raw `Blob` objects (not base64) in IndexedDB. They are only
   observaciones
 }
 ```
+
+Radon records additionally use `sitio`, `provincia`, `canton`, and `parroquia` as text values. PDF/JSON export and collection lists branch on `tipo`.
 
 `collectFormData()` in `app.js` reads the live DOM to build this object. Toggle Sí/No buttons write directly to the in-memory `ficha` object via `setNestedValue()` using dot-path strings (e.g. `"parametros.humedad"`), then `autoSave()` persists to IndexedDB.
 
@@ -81,7 +84,7 @@ When already installed (`isInStandaloneMode()`), the menu item is shown disabled
 
 ## Service Worker (`sw.js`)
 
-The current cache name is defined by `CACHE_NAME` in `sw.js` (`ficha-medicion-v8` at this revision). **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
+The current cache name is defined by `CACHE_NAME` in `sw.js` (`ficha-medicion-v9` at this revision). **Bump this string whenever adding new assets or making breaking changes** — the activate handler purges all caches with a different name. The `ASSETS` array must list every file the app needs; omitting a file breaks offline mode silently.
 
 The app also exposes a **"Limpiar caché y datos"** option in the home ⋮ menu (`clearAllData()` in `app.js`) which deletes all IndexedDB records, clears all SW caches, and unregisters the SW.
 

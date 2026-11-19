@@ -1,6 +1,6 @@
-# Ficha Técnica de Medición
+# Fichas de campo: Cuevas y Radón
 
-App móvil para registrar variables y equipos de medición en cuevas. Funciona **100% offline** una vez instalada — sin conexión a internet, sin servidores, sin cuentas.
+App móvil para registrar mediciones de cuevas y radón. Funciona **100% offline** una vez instalada — sin conexión a internet, sin servidores, sin cuentas.
 
 🔗 **[Abrir la app](https://hernanx21.github.io/pdf-form-maker)**
 
@@ -8,7 +8,14 @@ App móvil para registrar variables y equipos de medición en cuevas. Funciona *
 
 ## ¿Qué hace?
 
-Permite crear y gestionar **fichas técnicas de campo** con la siguiente información:
+Al iniciar, elige entre dos colecciones locales de fichas:
+
+- **Cuevas:** conserva el formulario de medición existente.
+- **Radón:** registra sitio, provincia, cantón, parroquia, punto, fechas y horarios; también incluye parámetros ambientales, equipos, observaciones y fotografías.
+
+Cada colección mantiene su propia lista y permite exportar PDF y JSON.
+
+La ficha de Cuevas incluye:
 
 | Sección | Contenido |
 |---|---|
@@ -46,9 +53,10 @@ La app se puede instalar como una app nativa desde el navegador — sin pasar po
 ## Uso básico
 
 ### Crear una ficha
-1. Toca el botón **+** en la pantalla principal
-2. Completa las secciones del formulario (los campos con * son requeridos: Cueva, Punto y Fecha)
-3. Los datos se guardan automáticamente mientras escribís — no hay botón "Guardar"
+1. Elige **Cuevas** o **Radón** en la pantalla inicial.
+2. Toca el botón **+** en la lista correspondiente.
+3. Completa las secciones del formulario. Provincia, cantón y parroquia en Radón son campos de texto libre.
+4. Los datos se guardan automáticamente mientras escribís — no hay botón "Guardar"
 
 ### Navegar las secciones
 Cada sección es un panel colapsable. Toca el encabezado para expandirla o cerrarla.
@@ -75,9 +83,10 @@ Toca **"Exportar PDF"** al final del formulario, o desde la lista de fichas en e
 
 ## Pantalla principal
 
-Desde el **home** podés:
-- Ver todas las fichas creadas (ordenadas por última modificación)
-- Ver el estado de cada ficha: **✓ Completa** (tiene cueva, punto y fecha) o **⏳ Parcial**
+Desde cada lista podés:
+- Ver las fichas de Cuevas o Radón (ordenadas por última modificación)
+- Volver al selector para cambiar de colección
+- Ver el estado de cada ficha: **✓ Completa** o **⏳ Parcial**
 - Abrir, exportar a PDF, exportar a JSON o eliminar cualquier ficha
 - Acceder al menú ⋮ para importar, exportar todas, instalar la app o limpiar datos
 

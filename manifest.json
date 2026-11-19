@@ -1,7 +1,7 @@
 {
-  "name": "Ficha Técnica de Medición",
-  "short_name": "FichaMedición",
-  "description": "App para registrar fichas técnicas de variables y equipos de medición en cuevas",
+  "name": "Fichas de campo — Cuevas y Radón",
+  "short_name": "Fichas de campo",
+  "description": "App offline para fichas de exploración de cuevas y medición de radón",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",

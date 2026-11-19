@@ -1,6 +1,6 @@
 /**
  * Ficha Técnica de Medición — Main App
- * SPA with hash routing: #home | #form?id=...
+ * SPA with hash routing: #start | #home?type=cave|radon | #form?id=...&type=...
  */
 (() => {
   // =========================================
@@ -33,7 +33,9 @@
   }
 
   function isFichaComplete(ficha) {
-    return !!(ficha.cueva && ficha.punto && ficha.fecha && ficha.horaInicio);
+    return ficha.tipo === 'radon'
+      ? !!(ficha.sitio && ficha.fecha && ficha.horaInicio)
+      : !!(ficha.cueva && ficha.punto && ficha.fecha && ficha.horaInicio);
   }
 
   function debounce(fn, ms) {
@@ -73,7 +75,7 @@
   // Router
   // =========================================
   function getRoute() {
-    const hash = location.hash.replace('#', '') || 'home';
+    const hash = location.hash.replace('#', '') || 'start';
     const [path, query] = hash.split('?');
     const params = {};
     if (query) query.split('&').forEach(p => { const [k, v] = p.split('='); params[k] = decodeURIComponent(v || ''); });
@@ -93,18 +95,45 @@
   async function render() {
     const { path, params } = getRoute();
     if (path === 'form') {
-      await renderForm(params.id || 'new');
+      await renderForm(params.id || 'new', params.type || params.tipo || 'cave');
+    } else if (path === 'home') {
+      await renderHome(params.type || params.tipo || 'cave');
+    } else if (path === 'start') {
+      renderStart();
     } else {
-      await renderHome();
+      renderStart();
     }
+  }
+
+  function renderStart() {
+    currentFichaId = null;
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <main class="start-screen">
+        <div class="start-brand"><span class="brand-mark">FM</span><span>Fichas de campo</span></div>
+        <section class="start-intro"><p class="eyebrow">HERRAMIENTA DE MEDICIÓN</p><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo de campo.</p></section>
+        <section class="type-grid" aria-label="Tipo de ficha">
+          <button class="type-card cave-card" data-type="cave">
+            <span class="type-art cave-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M8 72 Q18 50 26 36 Q34 19 50 12 Q66 19 74 36 Q82 50 92 72Z"/><path d="M34 72 Q38 54 50 43 Q62 54 66 72Z"/><path d="M18 56 Q33 47 50 49 Q67 47 82 56"/></svg></span>
+            <span class="type-name">Cuevas</span><span class="type-copy">Exploración y mediciones subterráneas</span><span class="type-action">Abrir fichas</span>
+          </button>
+          <button class="type-card radon-card" data-type="radon">
+            <span class="type-art radon-art" aria-hidden="true"><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="8"/><path d="M46 30 34 10Q28 7 24 13L37 35M58 37 82 35Q87 39 83 45L59 45M43 47 34 69Q37 75 44 73L51 50"/><circle cx="50" cy="40" r="30"/></svg></span>
+            <span class="type-name">Radón</span><span class="type-copy">Registro de sitios y medición de radón</span><span class="type-action">Abrir fichas</span>
+          </button>
+        </section>
+        <p class="start-footnote">Tus registros se guardan en este dispositivo.</p>
+      </main>`;
+    $$('.type-card').forEach(card => card.addEventListener('click', () => navigate('home', { type: card.dataset.type })));
   }
 
   // =========================================
   // Home Screen
   // =========================================
-  async function renderHome() {
+  async function renderHome(type = 'cave') {
+    type = type === 'radon' ? 'radon' : 'cave';
     currentFichaId = null;
-    const fichas = await DB.getAllFichas();
+    const fichas = (await DB.getAllFichas()).filter(f => (f.tipo || 'cave') === type);
     // Sort by updatedAt desc
     fichas.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -113,8 +142,8 @@
       <div class="home-screen">
         <header class="app-header">
           <div class="header-title">
-            Fichas de Medición
-            <div class="header-subtitle">App de campo — cuevas</div>
+            Fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'}
+            <div class="header-subtitle">App de campo — ${type === 'radon' ? 'medición de radón' : 'exploración subterránea'}</div>
           </div>
           <div class="header-status">
             <div class="status-dot" id="status-dot"></div>
@@ -124,7 +153,8 @@
         </header>
 
         <main class="home-content">
-          ${fichas.length === 0 ? renderEmptyState() : renderFichaList(fichas)}
+          <button class="collection-switch" id="collection-switch">← Cambiar tipo de ficha</button>
+          ${fichas.length === 0 ? renderEmptyState(type) : renderFichaList(fichas, type)}
         </main>
 
         <button class="fab" id="new-ficha-btn" title="Nueva Ficha">+</button>
@@ -132,15 +162,16 @@
 
     updateOnlineStatus();
 
-    $('#new-ficha-btn').addEventListener('click', () => navigate('form', { id: 'new' }));
-    $('#home-menu-btn').addEventListener('click', (e) => showHomeMenu(e));
+    $('#new-ficha-btn').addEventListener('click', () => navigate('form', { id: 'new', type }));
+    $('#home-menu-btn').addEventListener('click', (e) => showHomeMenu(e, type));
+    $('#collection-switch').addEventListener('click', () => navigate('start'));
 
     // Bind ficha card actions
     $$('.ficha-card-main').forEach(el => {
-      el.addEventListener('click', () => navigate('form', { id: el.dataset.id }));
+      el.addEventListener('click', () => navigate('form', { id: el.dataset.id, type }));
     });
     $$('[data-action="edit"]').forEach(el => {
-      el.addEventListener('click', () => navigate('form', { id: el.dataset.id }));
+      el.addEventListener('click', () => navigate('form', { id: el.dataset.id, type }));
     });
     $$('[data-action="pdf"]').forEach(el => {
       el.addEventListener('click', () => exportPDF(el.dataset.id));
@@ -153,24 +184,24 @@
     });
   }
 
-  function renderEmptyState() {
+  function renderEmptyState(type) {
     return `
       <div class="empty-state">
-        <div class="empty-icon">🗺️</div>
+        <div class="empty-icon">${type === 'radon' ? '☢️' : '🗺️'}</div>
         <div class="empty-title">Sin fichas aún</div>
-        <div class="empty-subtitle">Toca + para crear tu primera ficha técnica de medición</div>
+        <div class="empty-subtitle">Toca + para crear tu primera ficha de ${type === 'radon' ? 'Radón' : 'Cuevas'}</div>
       </div>`;
   }
 
-  function renderFichaList(fichas) {
+  function renderFichaList(fichas, type) {
     return `
       <div class="home-count">${fichas.length} ficha${fichas.length !== 1 ? 's' : ''}</div>
       <div class="ficha-list">
-        ${fichas.map(f => renderFichaCard(f)).join('')}
+        ${fichas.map(f => renderFichaCard(f, type)).join('')}
       </div>`;
   }
 
-  function renderFichaCard(f) {
+  function renderFichaCard(f, type) {
     const complete = isFichaComplete(f);
     const dateStr = f.fecha ? formatDate(f.fecha) : 'Sin fecha';
     const updStr = new Date(f.updatedAt).toLocaleDateString('es', { day: '2-digit', month: 'short' });
@@ -180,9 +211,9 @@
         <div class="ficha-card-main" data-id="${f.id}" role="button" tabindex="0">
           <div class="ficha-card-header">
             <div class="ficha-card-info">
-              <div class="ficha-cueva">${f.cueva || '(Sin nombre)'}</div>
+              <div class="ficha-cueva">${esc(type === 'radon' ? (f.sitio || '(Sin sitio)') : (f.cueva || '(Sin nombre)'))}</div>
               <div class="ficha-meta">
-                ${f.punto ? `<span class="ficha-meta-item">📍 ${f.punto}</span>` : ''}
+                ${type === 'radon' ? [f.provincia, f.canton, f.parroquia].filter(Boolean).map(v => `<span class="ficha-meta-item">📍 ${esc(v)}</span>`).join('') : (f.punto ? `<span class="ficha-meta-item">📍 ${esc(f.punto)}</span>` : '')}
                 <span class="ficha-meta-item">📅 ${dateStr}</span>
                 <span class="ficha-meta-item">✏️ ${updStr}</span>
               </div>
@@ -209,7 +240,7 @@
       </div>`;
   }
 
-  function showHomeMenu(e) {
+  function showHomeMenu(e, type = 'cave') {
     if (currentMenuCleanup) currentMenuCleanup();
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
@@ -224,7 +255,7 @@
     menu.innerHTML = `
       <button class="menu-item" data-menu="import">📂 Importar fichas (JSON)</button>
       <div class="divider"></div>
-      <button class="menu-item" data-menu="export-all">💾 Exportar todas (JSON)</button>
+      <button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'} (JSON)</button>
       <div class="divider"></div>
       ${installedAlready
         ? `<button class="menu-item" data-menu="install" disabled style="opacity:.4;cursor:default">📲 App ya instalada</button>`
@@ -247,8 +278,8 @@
       item.addEventListener('click', () => {
         if (item.disabled) return;
         cleanup();
-        if (item.dataset.menu === 'import') triggerImport();
-        if (item.dataset.menu === 'export-all') exportAllJSON();
+        if (item.dataset.menu === 'import') triggerImport(type);
+        if (item.dataset.menu === 'export-all') exportAllJSON(type);
         if (item.dataset.menu === 'install') triggerInstall();
         if (item.dataset.menu === 'clear') showClearDialog();
       });
@@ -314,12 +345,14 @@
   // =========================================
   // Form Screen
   // =========================================
-  async function renderForm(id) {
+  async function renderForm(id, requestedType = 'cave') {
+    requestedType = requestedType === 'radon' ? 'radon' : 'cave';
     let ficha;
     if (id === 'new') {
       ficha = {
+        tipo: requestedType,
         id: crypto.randomUUID(),
-        cueva: '', punto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '',
+        cueva: '', punto: '', sitio: '', provincia: '', canton: '', parroquia: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '',
         agua: '', aguaTipo: { corriendo: null, estancada: null },
         seccionTransversal: '',
         parametros: { humedad: false, temperatura: false, presion: false, velViento: false, co2: false },
@@ -331,26 +364,28 @@
       await DB.createFicha(ficha);
     } else {
       ficha = await DB.getFicha(id);
-      if (!ficha) { navigate('home'); return; }
+      if (!ficha) { navigate('home', { type: requestedType }); return; }
+      if (!ficha.tipo) ficha.tipo = 'cave';
     }
+    const type = ficha.tipo === 'radon' ? 'radon' : 'cave';
     currentFichaId = ficha.id;
 
     const fotos = await DB.getFotos(ficha.id);
     const app = document.getElementById('app');
 
     app.innerHTML = `
-      <div class="form-screen">
+      <div class="form-screen" data-type="${type}">
         <header class="app-header">
           <button class="header-back" id="back-btn" title="Volver">←</button>
           <div class="header-title">
-            ${ficha.cueva || 'Nueva Ficha'}
+            ${esc(type === 'radon' ? (ficha.sitio || 'Nueva ficha de Radón') : (ficha.cueva || 'Nueva Ficha'))}
             <div class="header-subtitle" id="save-status-header">Auto-guardado</div>
           </div>
           <button class="btn-icon" id="form-menu-btn" aria-label="Más opciones">⋮</button>
         </header>
 
         <main class="form-content" id="form-content">
-          ${renderSection1(ficha)}
+          ${type === 'radon' ? renderRadonSection1(ficha) : renderSection1(ficha)}
           ${renderSection2(ficha)}
           ${renderSection3(ficha)}
           ${renderSection4(ficha)}
@@ -365,6 +400,21 @@
       </div>`;
 
     bindFormEvents(ficha);
+  }
+
+  function renderRadonSection1(f) {
+    return `
+      <div class="form-section expanded" id="section-1">
+        <button class="section-toggle" data-section="1"><div class="section-number">1</div><span class="section-title">Ubicación y detalles de medición</span><span class="section-chevron">▼</span></button>
+        <div class="section-body">
+          <div class="field"><label for="f-sitio">Sitio o lugar de medición</label><input type="text" id="f-sitio" name="sitio" value="${esc(f.sitio)}" placeholder="Nombre del sitio"></div>
+          <div class="field-row"><div class="field"><label for="f-provincia">Provincia</label><input type="text" id="f-provincia" name="provincia" value="${esc(f.provincia)}" placeholder="Provincia"></div><div class="field"><label for="f-canton">Cantón</label><input type="text" id="f-canton" name="canton" value="${esc(f.canton)}" placeholder="Cantón"></div></div>
+          <div class="field"><label for="f-parroquia">Parroquia</label><input type="text" id="f-parroquia" name="parroquia" value="${esc(f.parroquia)}" placeholder="Parroquia"></div>
+          <div class="field"><label for="f-punto">Punto de medición</label><input type="text" id="f-punto" name="punto" value="${esc(f.punto)}" placeholder="P0, P1, etc."></div>
+          <div class="field-row"><div class="field"><label for="f-fecha">Fecha de inicio</label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}"></div><div class="field"><label for="f-hora-inicio">Hora de inicio</label><input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}"></div></div>
+          <div class="field-row"><div class="field"><label for="f-fecha-fin">Fecha de fin</label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}"></div><div class="field"><label for="f-hora-fin">Hora de fin</label><input type="time" id="f-hora-fin" name="horaFin" value="${esc(f.horaFin)}"></div></div>
+        </div>
+      </div>`;
   }
 
   function renderSection1(f) {
@@ -626,7 +676,7 @@
     });
 
     // Back button
-    document.getElementById('back-btn')?.addEventListener('click', () => navigate('home'));
+    document.getElementById('back-btn')?.addEventListener('click', () => navigate('home', { type: ficha.tipo || 'cave' }));
 
     // Form menu
     document.getElementById('form-menu-btn')?.addEventListener('click', (e) => showFormMenu(e, ficha));
@@ -681,8 +731,8 @@
       await DB.updateFicha(currentFichaId, data);
       // Update header title
       const headerTitle = document.querySelector('.header-title');
-      if (headerTitle && data.cueva) {
-        headerTitle.childNodes[0].textContent = data.cueva;
+      if (headerTitle && (data.cueva || data.sitio)) {
+        headerTitle.childNodes[0].textContent = data.tipo === 'radon' ? data.sitio : data.cueva;
       }
       setSaveStatus('saved');
     } catch {
@@ -712,10 +762,10 @@
   }
 
   function collectFormData() {
-    const ficha = {};
+    const ficha = { tipo: document.querySelector('.form-screen')?.dataset.type || 'cave' };
 
     // Text fields
-    ['cueva', 'punto', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'seccionTransversal', 'observaciones'].forEach(name => {
+    ['cueva', 'punto', 'sitio', 'provincia', 'canton', 'parroquia', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'seccionTransversal', 'observaciones'].forEach(name => {
       const el = document.querySelector(`[name="${name}"]`) || document.getElementById(`f-${name}`) || document.getElementById(`f-${camelToKebab(name)}`);
       if (el) ficha[name] = el.value;
     });
@@ -862,7 +912,8 @@
       }
 
       showToast('Datos y caché eliminados', 'success');
-      await renderHome();
+      const { params } = getRoute();
+      await renderHome(params.type || 'cave');
     } catch (err) {
       console.error(err);
       showToast('Error al limpiar', 'error');
@@ -902,13 +953,14 @@
       return { name: f.name, type: f.blob.type, data: base64, createdAt: f.createdAt };
     }));
 
-    const exportData = { ficha, fotos: fotosExport, exportedAt: new Date().toISOString(), version: 1 };
+    const exportData = { ficha, fotos: fotosExport, exportedAt: new Date().toISOString(), version: 2 };
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const baseName = ficha.cueva ? (ficha.punto ? `${ficha.cueva}_${ficha.punto}` : ficha.cueva) : 'Ficha';
+    const fichaName = ficha.tipo === 'radon' ? ficha.sitio : ficha.cueva;
+    const baseName = fichaName ? (ficha.punto ? `${fichaName}_${ficha.punto}` : fichaName) : 'Ficha';
     const safeName = baseName.replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚüÜñÑ ]/g, '_');
     a.download = `Ficha_${safeName}_${ficha.fecha || 'sin-fecha'}.json`;
     a.click();
@@ -916,8 +968,9 @@
     showToast('JSON exportado', 'success');
   }
 
-  async function exportAllJSON() {
-    const fichas = await DB.getAllFichas();
+  async function exportAllJSON(type) {
+    const allFichas = await DB.getAllFichas();
+    const fichas = type ? allFichas.filter(f => (f.tipo || 'cave') === type) : allFichas;
     const allData = await Promise.all(fichas.map(async f => {
       const fotos = await DB.getFotos(f.id);
       const fotosExport = await Promise.all(fotos.map(async foto => {
@@ -927,19 +980,19 @@
       return { ficha: f, fotos: fotosExport };
     }));
 
-    const exportData = { fichas: allData, exportedAt: new Date().toISOString(), version: 1 };
+    const exportData = { fichas: allData, exportedAt: new Date().toISOString(), version: 2 };
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `FichasMedicion_todas_${new Date().toISOString().substring(0,10)}.json`;
+    a.download = `Fichas_${type === 'radon' ? 'Radon' : type === 'cave' ? 'Cuevas' : 'Medicion'}_${new Date().toISOString().substring(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast(`${fichas.length} fichas exportadas`, 'success');
   }
 
-  function triggerImport() {
+  function triggerImport(type) {
     const input = document.getElementById('import-file');
     input.value = '';
     input.onchange = async () => {
@@ -948,7 +1001,7 @@
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        await importJSON(data);
+        await importJSON(data, type);
       } catch (err) {
         showToast('Error al leer el archivo', 'error');
         console.error(err);
@@ -957,12 +1010,13 @@
     input.click();
   }
 
-  async function importJSON(data) {
+  async function importJSON(data, currentType = 'cave') {
     let imported = 0;
     const items = data.fichas || [{ ficha: data.ficha, fotos: data.fotos }];
 
     for (const item of items) {
-      const { ficha, fotos = [] } = item;
+      const { ficha: rawFicha, fotos = [] } = item;
+      const ficha = { ...rawFicha, tipo: rawFicha?.tipo || 'cave' };
       if (!ficha?.id) continue;
       // Check if exists, if so update
       const existing = await DB.getFicha(ficha.id);
@@ -980,7 +1034,7 @@
     }
 
     showToast(`${imported} ficha(s) importada(s)`, 'success');
-    await renderHome();
+    await renderHome(currentType);
   }
 
   function blobToBase64(blob) {
@@ -1004,12 +1058,12 @@
   // =========================================
   async function deleteFicha(id, fromForm = false) {
     const ficha = await DB.getFicha(id);
-    const name = ficha?.cueva || 'esta ficha';
+    const name = ficha?.tipo === 'radon' ? (ficha?.sitio || 'esta ficha') : (ficha?.cueva || 'esta ficha');
     const ok = await confirm('Eliminar ficha', `¿Eliminar "${name}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     await DB.deleteFicha(id);
     showToast('Ficha eliminada');
-    navigate('home');
+    navigate('home', { type: ficha?.tipo || 'cave' });
   }
 
   // =========================================

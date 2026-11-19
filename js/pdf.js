@@ -129,23 +129,31 @@ const PDFGen = (() => {
     doc.setTextColor(...COLORS.titleText);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('FICHA DE VARIABLES Y EQUIPOS DE MEDICION', pageW / 2, y + 9.5, { align: 'center' });
+    doc.text(ficha.tipo === 'radon' ? 'FICHA DE MEDICIÓN DE RADÓN' : 'FICHA DE VARIABLES Y EQUIPOS DE MEDICION', pageW / 2, y + 9.5, { align: 'center' });
     y += 14 + 4;
 
     // ---- SECTION 1 ----
     checkPageBreak(70);
-    sectionHeader('1. Detalles de cueva');
-
-    const aguaVal = ficha.agua === 'si' ? true : ficha.agua === 'no' ? false : null;
-
-    autoTable([
-      [ labelCell('Cueva'), valueCell(ficha.cueva),  labelCell('Punto'), valueCell(ficha.punto) ],
-      [ labelCell('Fecha inicio'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha fin'), valueCell(formatDate(ficha.fechaFin)) ],
-      [ labelCell('Hora inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora fin'), valueCell(formatTime(ficha.horaFin)) ],
-      [ labelCell('Agua'),        ynCell(aguaVal),
-        labelCell('Tipo'),        valueCell(ficha.agua === 'si' ? aguaTipoSummary(ficha) : '—') ],
-      [ labelCell('Seccion transversal'), { content: ficha.seccionTransversal || '—', colSpan: 3 } ],
-    ]);
+    if (ficha.tipo === 'radon') {
+      sectionHeader('1. Ubicación y detalles de medición');
+      autoTable([
+        [ labelCell('Sitio'), valueCell(ficha.sitio), labelCell('Punto'), valueCell(ficha.punto) ],
+        [ labelCell('Provincia'), valueCell(ficha.provincia), labelCell('Cantón'), valueCell(ficha.canton) ],
+        [ labelCell('Parroquia'), { content: ficha.parroquia || '—', colSpan: 3 } ],
+        [ labelCell('Fecha inicio'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha fin'), valueCell(formatDate(ficha.fechaFin)) ],
+        [ labelCell('Hora inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora fin'), valueCell(formatTime(ficha.horaFin)) ],
+      ]);
+    } else {
+      sectionHeader('1. Detalles de cueva');
+      const aguaVal = ficha.agua === 'si' ? true : ficha.agua === 'no' ? false : null;
+      autoTable([
+        [ labelCell('Cueva'), valueCell(ficha.cueva),  labelCell('Punto'), valueCell(ficha.punto) ],
+        [ labelCell('Fecha inicio'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha fin'), valueCell(formatDate(ficha.fechaFin)) ],
+        [ labelCell('Hora inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora fin'), valueCell(formatTime(ficha.horaFin)) ],
+        [ labelCell('Agua'), ynCell(aguaVal), labelCell('Tipo'), valueCell(ficha.agua === 'si' ? aguaTipoSummary(ficha) : '—') ],
+        [ labelCell('Seccion transversal'), { content: ficha.seccionTransversal || '—', colSpan: 3 } ],
+      ]);
+    }
 
     // ---- SECTION 2 ----
     checkPageBreak(50);
@@ -256,9 +264,10 @@ const PDFGen = (() => {
       doc.text(`Pag. ${p} / ${total}`, pageW - margin, pageH - 8, { align: 'right' });
     }
 
-    const baseName = ficha.cueva ? (ficha.punto ? `${ficha.cueva}_${ficha.punto}` : ficha.cueva) : 'Ficha';
+    const fichaName = ficha.tipo === 'radon' ? ficha.sitio : ficha.cueva;
+    const baseName = fichaName ? (ficha.punto ? `${fichaName}_${ficha.punto}` : fichaName) : (ficha.tipo === 'radon' ? 'Radon' : 'Ficha');
     const safeName = baseName.replace(/[^a-zA-Z0-9_\- ]/g, '_');
-    doc.save(`Ficha_${safeName}_${ficha.fecha || new Date().toISOString().substring(0, 10)}.pdf`);
+    doc.save(`${ficha.tipo === 'radon' ? 'Radon' : 'Ficha'}_${safeName}_${ficha.fecha || new Date().toISOString().substring(0, 10)}.pdf`);
   }
 
   function blobToDataUrl(blob) {
