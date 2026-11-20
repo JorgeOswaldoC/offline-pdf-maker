@@ -1114,9 +1114,11 @@ body {
 .experiment-form { display: grid; gap: 14px; }
 .experiment-panel h2, .experiment-review h2, .experiment-species-panel h2, .experiment-summary h2 { margin-bottom: 12px; font-size: 16px; }
 .experiment-field { display: grid; gap: 6px; margin: 10px 0; color: var(--text-secondary); font-size: 13px; }
-.experiment-field input { width: 100%; min-height: 42px; padding: 10px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); font: inherit; }
+.experiment-field input { width: 100%; min-width: 0; max-width: 100%; min-height: 42px; padding: 10px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); font: inherit; }
 .experiment-field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 .experiment-field-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.experiment-field-row > .experiment-field { grid-template-rows: minmax(3em, auto) 42px; align-content: start; }
+.experiment-field-row > .experiment-field > span { display: block; }
 .experiment-species-row { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
 .experiment-species-row > strong { color: var(--text); font-size: 13px; }
 .experiment-control { display: flex; align-items: flex-start; gap: 9px; margin: 12px 0; color: var(--text); font-size: 13px; }
@@ -1151,13 +1153,13 @@ body {
 .experiment-treatment span { color: var(--text-secondary); font-size: 11px; }
 .experiment-treatment .experiment-treatment-count { color: var(--success); }
 .experiment-matrix-screen { width: 100%; max-width: none; min-height: 100dvh; }
-.experiment-matrix-help { padding: 10px 16px; color: var(--text-secondary); font-size: 12px; }
+.experiment-matrix-help { padding: 7px 12px; color: var(--text-secondary); font-size: 11px; line-height: 1.45; }
 .experiment-matrix-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; }
 .experiment-matrix { border-collapse: separate; border-spacing: 0; font-size: 11px; white-space: nowrap; }
 .experiment-matrix th, .experiment-matrix td { min-width: 82px; padding: 5px; text-align: center; background: var(--surface); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .experiment-matrix thead th { position: sticky; top: 0; z-index: 2; color: var(--text); }
 .experiment-matrix th small, .experiment-matrix .sample-column small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: 10px; font-weight: 400; }
-.experiment-matrix .sample-column { position: sticky; left: 0; z-index: 3; min-width: 190px; text-align: left; }
+.experiment-matrix .sample-column { position: sticky; left: 0; z-index: 3; width: 1%; min-width: 0; text-align: left; white-space: nowrap; }
 .experiment-matrix td select { width: 100%; min-height: 34px; color: var(--text); text-align: center; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; font-weight: 700; }
 .experiment-matrix td.state-emergio select { color: #052e16; background: #86efac; }
 .experiment-matrix td.state-murio select { color: #450a0a; background: #fca5a5; }

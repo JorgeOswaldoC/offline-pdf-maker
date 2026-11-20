@@ -22,6 +22,8 @@ const Experiments = (() => {
     const match = String(treatment.code || '').match(/^T0*(\d+)$/i);
     return match && Number(match[1]) > 0 ? `T${Number(match[1])}` : `T${index + 1}`;
   };
+  const sampleIdentifier = (sample, treatment, index = 0) =>
+    `${sample.speciesCode}-${canonicalTreatmentCode(treatment, index)}-R${Number(sample.repetition)}-U${Number(sample.unit)}`;
   const treatmentPosition = (species, treatment) => species.treatments.filter((item) => !item.isControl).indexOf(treatment);
   const localDate = (date) => {
     const d = new Date(`${date}T12:00:00`);
@@ -127,13 +129,13 @@ const Experiments = (() => {
             <div id="experiment-treatment-fields" class="experiment-treatment-options"></div>
             <button class="btn btn-ghost btn-sm" type="button" data-refresh-design>Actualizar bloques del diseño</button>
             <div class="experiment-field-row">
-              <label class="experiment-field">Repeticiones por tratamiento<input name="replicates" type="number" min="1" max="100" value="3" required></label>
-              <label class="experiment-field">Semillas por repetición<input name="seedsPerReplicate" type="number" min="1" max="500" value="10" required></label>
+              <label class="experiment-field"><span>Repeticiones por tratamiento</span><input name="replicates" type="number" min="1" max="100" value="3" required></label>
+              <label class="experiment-field"><span>Semillas por repetición</span><input name="seedsPerReplicate" type="number" min="1" max="500" value="10" required></label>
             </div>
             <label class="experiment-control"><input name="hasControl" type="checkbox" checked> Incluir grupo control T0 con igual número de repeticiones y semillas</label>
           </section>
           <section class="experiment-panel"><h2>Duración</h2>
-            <div class="experiment-field-row"><label class="experiment-field">Fecha inicial<input name="startDate" type="date" required></label><label class="experiment-field">Duración (días)<input name="durationDays" type="number" min="1" max="3650" value="30" required></label></div>
+            <div class="experiment-field-row"><label class="experiment-field"><span>Fecha inicial</span><input name="startDate" type="date" required></label><label class="experiment-field"><span>Duración (días)</span><input name="durationDays" type="number" min="1" max="3650" value="30" required></label></div>
           </section>
           <section class="experiment-review" id="experiment-design-review" aria-live="polite"></section>
           <button class="btn btn-primary btn-full btn-lg" type="submit">${editing ? 'Guardar cambios' : 'Crear experimento'}</button>
@@ -284,7 +286,7 @@ const Experiments = (() => {
   function makeSample(speciesCode, treatment, speciesName, repetition, unit) {
     return {
       uuid: crypto.randomUUID(),
-      id: `${speciesCode}-${treatment.code}-R${pad(repetition)}-U${pad(unit)}`,
+      id: `${speciesCode}-${treatment.code}-R${repetition}-U${unit}`,
       species: speciesName, speciesCode, treatment: treatment.name, treatmentCode: treatment.code,
       repetition, unit, values: [],
     };
@@ -321,7 +323,7 @@ const Experiments = (() => {
           for (let unit = 1; unit <= values.seedsPerReplicate; unit++) {
             const oldSample = previousTreatment?.samples.find((sample) => sample.repetition === repetition && sample.unit === unit);
             const sample = oldSample
-              ? { ...oldSample, id: `${item.abbreviation}-${definition.code}-R${pad(repetition)}-U${pad(unit)}`, species: item.name, speciesCode: item.abbreviation, treatment: definition.name, treatmentCode: definition.code, values: [...(oldSample.values || [])] }
+              ? { ...oldSample, id: `${item.abbreviation}-${definition.code}-R${repetition}-U${unit}`, species: item.name, speciesCode: item.abbreviation, treatment: definition.name, treatmentCode: definition.code, values: [...(oldSample.values || [])] }
               : makeSample(item.abbreviation, definition, item.name, repetition, unit);
             kept.set(sample.uuid, sample);
             samples.push(sample);
@@ -516,12 +518,12 @@ const Experiments = (() => {
   function exportSampleLabelsPdf(experiment) {
     const labels = experiment.design.species.flatMap((species) => species.treatments.flatMap((treatment) =>
       treatment.samples.map((sample) => ({
-        code: `${species.abbreviation}-${canonicalTreatmentCode(treatment, treatmentPosition(species, treatment))}-R${pad(sample.repetition)}-U${pad(sample.unit)}`,
+        code: sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)),
       }))));
     if (!labels.length) return;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const columns = 4, rows = 10, pageCapacity = columns * rows, margin = 4;
+    const columns = 7, rows = 10, pageCapacity = columns * rows, margin = 5;
     const pageWidth = 210, pageHeight = 297;
     const cellWidth = (pageWidth - margin * 2) / columns;
     const cellHeight = (pageHeight - margin * 2) / rows;
@@ -535,9 +537,9 @@ const Experiments = (() => {
       const y = margin + Math.floor(cellIndex / columns) * cellHeight;
       doc.rect(x, y, cellWidth, cellHeight);
       doc.setFont('helvetica', 'bold');
-      let fontSize = 14;
+      let fontSize = 11;
       doc.setFontSize(fontSize);
-      while (fontSize > 7 && doc.getTextWidth(label.code) > cellWidth - 8) {
+      while (fontSize > 6 && doc.getTextWidth(label.code) > cellWidth - 4) {
         fontSize -= 0.5;
         doc.setFontSize(fontSize);
       }
@@ -715,11 +717,11 @@ const Experiments = (() => {
     const dateHeaders = days.map((day) => `<th><span>Día ${day}</span><small>${localDate(dateAfter(experiment.design.startDate, day))}</small></th>`).join('');
     root.innerHTML = `
       <main class="experiment-screen experiment-matrix-screen"><header class="experiment-header"><button class="btn-icon" data-back aria-label="Volver">←</button><div><div class="experiment-title">${escapeHtml(species.name)} · ${escapeHtml(treatment.name)}</div><div class="header-subtitle">${escapeHtml(experiment.code)} · ${treatment.samples.length} unidades</div></div><button class="btn btn-ghost btn-sm" data-export>CSV</button></header>
-        <div class="experiment-matrix-help">Registra primero Siembra; 1 solo puede marcarse en una fecha posterior. Usa M si murió, 0 si no emergió al cierre u O si está en observación. 1, 0 y M solo pueden aparecer una vez por unidad; O puede repetirse. No se permiten emergencias posteriores a una muerte.</div>
-        <div class="experiment-matrix-scroll"><table class="experiment-matrix"><thead><tr><th class="sample-column">Muestra / repetición</th>${dateHeaders}</tr></thead><tbody>${treatment.samples.map((sample) => `<tr><th class="sample-column"><strong>${escapeHtml(sample.id)}</strong><small>Repetición ${sample.repetition} · Unidad ${sample.unit}</small></th>${days.map((day) => {
+        <div class="experiment-matrix-help">·: Sin registro · S: Siembra · 1: Emergió · 0: No emergió · M: Murió · O: En observación</div>
+        <div class="experiment-matrix-scroll"><table class="experiment-matrix"><thead><tr><th class="sample-column">Muestra / repetición</th>${dateHeaders}</tr></thead><tbody>${treatment.samples.map((sample) => `<tr><th class="sample-column"><strong>${escapeHtml(sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)))}</strong><small>Repetición ${sample.repetition} · Unidad ${sample.unit}</small></th>${days.map((day) => {
           const value = sample.values[day] ?? '';
           const status = STATUS[value]?.state || 'pendiente';
-          return `<td class="matrix-cell state-${status}"><select aria-label="${escapeHtml(sample.id)}, día ${day}" data-sample="${escapeHtml(sample.uuid)}" data-day="${day}" data-prev="${escapeHtml(value)}"><option value="" ${value === '' ? 'selected' : ''}>·</option><option value="S" ${value === 'S' ? 'selected' : ''}>Siembra</option><option value="0" ${value === '0' ? 'selected' : ''}>0</option><option value="1" ${value === '1' ? 'selected' : ''}>1</option><option value="M" ${value === 'M' ? 'selected' : ''}>M</option><option value="O" ${value === 'O' ? 'selected' : ''}>O · Observación</option></select></td>`;
+          return `<td class="matrix-cell state-${status}"><select aria-label="${escapeHtml(sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)))}, día ${day}" data-sample="${escapeHtml(sample.uuid)}" data-day="${day}" data-prev="${escapeHtml(value)}"><option value="" ${value === '' ? 'selected' : ''}>·</option><option value="S" ${value === 'S' ? 'selected' : ''}>Siembra</option><option value="0" ${value === '0' ? 'selected' : ''}>0</option><option value="1" ${value === '1' ? 'selected' : ''}>1</option><option value="M" ${value === 'M' ? 'selected' : ''}>M</option><option value="O" ${value === 'O' ? 'selected' : ''} ${sample.values.slice(0, day).includes('M') ? 'disabled' : ''}>O · Observación</option></select></td>`;
         }).join('')}</tr>`).join('')}</tbody></table></div>
         <footer class="experiment-matrix-footer"><span>🟦 Siembra</span><span>🟩 Emergió</span><span>🟥 Murió</span><span>🟨 Observación</span><span>⬜ Sin emergencia</span><span>· Pendiente</span></footer>
       </main>`;
@@ -734,6 +736,16 @@ const Experiments = (() => {
       if (next === '1' && !sample.values.slice(0, day).includes('S')) {
         select.value = previous;
         toast('Registra Siembra en una fecha anterior antes de marcar Emergió', 'warning');
+        return;
+      }
+      if (next === 'O' && sample.values.slice(0, day).includes('M')) {
+        select.value = previous;
+        toast('No se puede registrar observación después de la muerte', 'warning');
+        return;
+      }
+      if (next === 'M' && sample.values.slice(day + 1).includes('O')) {
+        select.value = previous;
+        toast('No se puede declarar muerte si hay una observación posterior', 'warning');
         return;
       }
       if (['1', '0', 'M'].includes(next) && sample.values.some((value, index) => index !== day && value === next)) {
@@ -757,11 +769,15 @@ const Experiments = (() => {
         return;
       }
       if (next === 'M' && !sample.values.slice(0, day + 1).some((value) => value === '1' || value === 'M')) {
-        const accepted = await confirm('Mortalidad antes de emergencia', `La muestra <strong>${escapeHtml(sample.id)}</strong> no tiene un registro previo de emergencia. ¿Guardar de todos modos?`);
+        const accepted = await confirm('Mortalidad antes de emergencia', `La muestra <strong>${escapeHtml(sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)))}</strong> no tiene un registro previo de emergencia. ¿Guardar de todos modos?`);
         if (!accepted) { select.value = previous; return; }
       }
       sample.values[day] = next || null;
-      experiment.events.push({ id: crypto.randomUUID(), sampleId: sample.id, sampleUuid: sample.uuid, speciesCode, treatmentCode, day, date: dateAfter(experiment.design.startDate, day), state: STATUS[next].state, value: next || null, updatedAt: new Date().toISOString(), origin: 'local' });
+      select.closest('tr').querySelectorAll('select[data-sample]').forEach((daySelect) => {
+        const observationOption = daySelect.querySelector('option[value="O"]');
+        observationOption.disabled = sample.values.slice(0, Number(daySelect.dataset.day)).includes('M');
+      });
+      experiment.events.push({ id: crypto.randomUUID(), sampleId: sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)), sampleUuid: sample.uuid, speciesCode, treatmentCode, day, date: dateAfter(experiment.design.startDate, day), state: STATUS[next].state, value: next || null, updatedAt: new Date().toISOString(), origin: 'local' });
       select.dataset.prev = next;
       select.closest('td').className = `matrix-cell state-${STATUS[next].state}`;
       saveQueue = saveQueue.catch(() => undefined).then(() => DB.updateExperiment(id, experiment));
@@ -799,7 +815,7 @@ const Experiments = (() => {
     treatment.samples.forEach((sample) => Array.from({ length: experiment.design.durationDays + 1 }, (_, day) => day).forEach((day) => {
       const value = sample.values[day] ?? '';
       const latestEvent = [...experiment.events].reverse().find((event) => event.sampleUuid === sample.uuid && event.day === day);
-      rows.push([sample.id, species.name, treatment.name, sample.repetition, sample.unit,
+      rows.push([sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)), species.name, treatment.name, sample.repetition, sample.unit,
         dateAfter(experiment.design.startDate, day), STATUS[value].state, value, 'local', latestEvent?.updatedAt || experiment.createdAt, latestEvent?.origin || 'local']);
     }));
     return rows;
@@ -869,7 +885,7 @@ const Experiments = (() => {
           return { value: '', style: 4 };
         });
         const sowingDay = sample.values.findIndex((value) => value === 'S');
-        rows.push([{ value: sample.id }, { value: sowingDay >= 0 ? dateAfter(experiment.design.startDate, sowingDay) : '' }, ...values]);
+        rows.push([{ value: sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)) }, { value: sowingDay >= 0 ? dateAfter(experiment.design.startDate, sowingDay) : '' }, ...values]);
       });
       sheets.push({ name: `${species.abbreviation}_${canonicalTreatmentCode(treatment, treatmentPosition(species, treatment))}`, rows });
     }));
