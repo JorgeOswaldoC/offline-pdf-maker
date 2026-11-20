@@ -126,7 +126,10 @@
     const app = document.getElementById('app');
     app.innerHTML = `
       <main class="start-screen">
-        <div class="start-brand"><img class="brand-mark" src="icons/icon-ficharium.png" alt=""><span>Ficharium</span></div>
+        <header class="start-topbar">
+          <div class="start-brand"><img class="brand-mark" src="icons/icon-ficharium.png" alt=""><span>Ficharium</span></div>
+          <button class="btn-icon" id="start-menu-btn" aria-label="Menú" title="Más opciones">⋮</button>
+        </header>
         <section class="start-intro"><p class="eyebrow">HERRAMIENTA DE MEDICIÓN</p><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo de campo.</p></section>
         <section class="type-grid" aria-label="Tipo de ficha">
           <button class="type-card cave-card" data-type="cave">
@@ -141,6 +144,7 @@
         <p class="start-footnote">Tus registros se guardan en este dispositivo.</p>
       </main>`;
     $$('.type-card').forEach(card => card.addEventListener('click', () => navigate('home', { type: card.dataset.type })));
+    $('#start-menu-btn').addEventListener('click', (e) => showHomeMenu(e));
   }
 
   // =========================================
@@ -256,7 +260,7 @@
       </div>`;
   }
 
-  function showHomeMenu(e, type = 'cave') {
+  function showHomeMenu(e, type = null) {
     if (currentMenuCleanup) currentMenuCleanup();
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
@@ -268,10 +272,15 @@
     menu.className = 'menu-dropdown';
     menu.style.cssText = `top:${rect.bottom + 4}px; right:${document.documentElement.clientWidth - rect.right}px`;
     const installedAlready = isInStandaloneMode();
+    const exportOptions = type
+      ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'} (JSON)</button>`
+      : `<button class="menu-item" data-menu="export-all">💾 Exportar todas las fichas (JSON)</button>
+         <button class="menu-item" data-menu="export-cave">🗺️ Exportar fichas de Cuevas</button>
+         <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón</button>`;
     menu.innerHTML = `
       <button class="menu-item" data-menu="import">📂 Importar fichas (JSON)</button>
       <div class="divider"></div>
-      <button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'} (JSON)</button>
+      ${exportOptions}
       <div class="divider"></div>
       ${installedAlready
         ? `<button class="menu-item" data-menu="install" disabled style="opacity:.4;cursor:default">📲 App ya instalada</button>`
@@ -296,6 +305,8 @@
         cleanup();
         if (item.dataset.menu === 'import') triggerImport(type);
         if (item.dataset.menu === 'export-all') exportAllJSON(type);
+        if (item.dataset.menu === 'export-cave') exportAllJSON('cave');
+        if (item.dataset.menu === 'export-radon') exportAllJSON('radon');
         if (item.dataset.menu === 'install') triggerInstall();
         if (item.dataset.menu === 'clear') showClearDialog();
       });
@@ -1277,7 +1288,8 @@
 
       showToast('Datos y caché eliminados', 'success');
       const { params } = getRoute();
-      await renderHome(params.type || 'cave');
+      if (getRoute().path === 'start') renderStart();
+      else await renderHome(params.type || 'cave');
     } catch (err) {
       console.error(err);
       showToast('Error al limpiar', 'error');
@@ -1429,7 +1441,8 @@
     }
 
     showToast(`${imported} ficha(s) importada(s)`, 'success');
-    await renderHome(currentType);
+    if (currentType) await renderHome(currentType);
+    else renderStart();
   }
 
   function blobToBase64(blob) {
