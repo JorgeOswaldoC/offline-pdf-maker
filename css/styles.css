@@ -619,6 +619,9 @@ body {
   border-color: var(--danger);
 }
 
+.field-validation-message { display: none; margin-top: -8px; color: var(--danger); font-size: 12px; }
+.field-validation-message.visible { display: block; }
+
 .field-error {
   font-size: 12px;
   color: var(--danger);

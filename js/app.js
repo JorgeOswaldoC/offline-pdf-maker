@@ -50,8 +50,19 @@
     return ficha.tipo === 'radon'
       ? !!(ficha.nombresCompletos && ficha.provincia && ficha.canton && ficha.parroquia
         && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.codigoElectreto && ficha.fecha
-        && ficha.fechaFin && ficha.voltajeInicial && ficha.voltajeFinal)
+        && ficha.fechaFin && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
       : !!(ficha.cueva && ficha.provincia && ficha.canton && ficha.punto && ficha.fecha && ficha.horaInicio);
+  }
+
+  function hasValidVoltageRange(ficha) {
+    if (String(ficha.voltajeInicial ?? '').trim() === '' || String(ficha.voltajeFinal ?? '').trim() === '') return false;
+    const initial = Number(ficha.voltajeInicial);
+    const final = Number(ficha.voltajeFinal);
+    return Number.isFinite(initial) && Number.isFinite(final) && final <= initial;
+  }
+
+  function hasValidMeasurementDates(ficha) {
+    return Boolean(ficha.fecha && ficha.fechaFin && ficha.fechaFin >= ficha.fecha);
   }
 
   function debounce(fn, ms) {
@@ -520,9 +531,11 @@
         <button class="section-toggle" data-section="3"><div class="section-number">3</div><span class="section-title">Datos de medición</span><span class="section-chevron">▼</span></button>
         <div class="section-body">
           <div class="field"><label for="f-codigo-electreto">Código del electreto <span class="required-mark">*</span></label><input type="text" id="f-codigo-electreto" name="codigoElectreto" value="${esc(f.codigoElectreto)}" placeholder="Código o identificador del electreto" required></div>
-          <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" required></div></div>
+          <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" max="${esc(f.fecha)}" required></div></div>
+          <p class="field-validation-message" id="date-validation-error" role="alert">La fecha final no puede ser anterior a la fecha inicial.</p>
           <div class="field-row"><div class="field"><label for="f-hora-inicio">Hora de inicio</label><input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}"></div><div class="field"><label for="f-hora-fin">Hora de fin</label><input type="time" id="f-hora-fin" name="horaFin" value="${esc(f.horaFin)}"></div></div>
           <div class="field-row"><div class="field"><label for="f-voltaje-inicial">Voltaje inicial <span class="required-mark">*</span></label><input type="number" id="f-voltaje-inicial" name="voltajeInicial" value="${esc(f.voltajeInicial)}" placeholder="Voltaje inicial" step="any" inputmode="decimal" required></div><div class="field"><label for="f-voltaje-final">Voltaje final <span class="required-mark">*</span></label><input type="number" id="f-voltaje-final" name="voltajeFinal" value="${esc(f.voltajeFinal)}" placeholder="Voltaje final" step="any" inputmode="decimal" required></div></div>
+          <p class="field-validation-message" id="voltage-validation-error" role="alert">El voltaje final no puede ser mayor que el voltaje inicial.</p>
 
           <div class="subsection-heading">Tipo de espacio donde se efectuará la medición</div>
           <div class="field"><label for="f-tipo-espacio">Tipo de espacio</label><select id="f-tipo-espacio" name="tipoEspacio"><option value="">Selecciona una opción</option><option value="dormitorio" ${f.tipoEspacio === 'dormitorio' ? 'selected' : ''}>Dormitorio</option><option value="sala" ${f.tipoEspacio === 'sala' ? 'selected' : ''}>Sala</option><option value="estudio_laboratorio" ${f.tipoEspacio === 'estudio_laboratorio' ? 'selected' : ''}>Estudio/Laboratorio</option><option value="otro" ${f.tipoEspacio === 'otro' ? 'selected' : ''}>Otro</option></select></div>
@@ -838,6 +851,38 @@
         save();
       });
     });
+    const initialVoltageInput = document.getElementById('f-voltaje-inicial');
+    const finalVoltageInput = document.getElementById('f-voltaje-final');
+    const voltageError = document.getElementById('voltage-validation-error');
+    if (initialVoltageInput && finalVoltageInput) {
+      const updateVoltageValidity = () => {
+        const hasBothValues = initialVoltageInput.value !== '' && finalVoltageInput.value !== '';
+        const invalidRange = hasBothValues && Number(finalVoltageInput.value) > Number(initialVoltageInput.value);
+        const message = invalidRange ? 'El voltaje final no puede ser mayor que el voltaje inicial.' : '';
+        finalVoltageInput.setCustomValidity(message);
+        finalVoltageInput.classList.toggle('error', invalidRange);
+        voltageError?.classList.toggle('visible', invalidRange);
+      };
+      initialVoltageInput.addEventListener('input', updateVoltageValidity);
+      finalVoltageInput.addEventListener('input', updateVoltageValidity);
+      updateVoltageValidity();
+    }
+    const initialDateInput = document.getElementById('f-fecha');
+    const finalDateInput = document.getElementById('f-fecha-fin');
+    const dateError = document.getElementById('date-validation-error');
+    if (initialDateInput && finalDateInput) {
+      const updateDateValidity = () => {
+        finalDateInput.max = initialDateInput.value;
+        const invalidRange = Boolean(initialDateInput.value && finalDateInput.value
+          && finalDateInput.value < initialDateInput.value);
+        finalDateInput.setCustomValidity(invalidRange ? 'La fecha final no puede ser anterior a la fecha inicial.' : '');
+        finalDateInput.classList.toggle('error', invalidRange);
+        dateError?.classList.toggle('visible', invalidRange);
+      };
+      initialDateInput.addEventListener('input', updateDateValidity);
+      finalDateInput.addEventListener('input', updateDateValidity);
+      updateDateValidity();
+    }
     const conditionalSelects = [
       ['f-tipologia-construccion', 'tipologia-otro-field', 'otro'],
       ['f-posicion-piso-bajo', 'posicion-otro-field', 'otro'],
@@ -1339,9 +1384,44 @@
         }
         return;
       }
-      await PDFGen.generate(ficha, fotos);
-      showToast('PDF exportado', 'success');
+      if ((ficha.tipo || 'cave') === 'radon' && !hasValidVoltageRange(ficha)) {
+        showToast('El voltaje final no puede ser mayor que el inicial', 'warning', 4000);
+        if (currentFichaId === id) {
+          document.getElementById('section-3')?.classList.add('expanded');
+          const finalInput = document.getElementById('f-voltaje-final');
+          finalInput?.classList.add('error');
+          finalInput?.focus();
+          finalInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+      if ((ficha.tipo || 'cave') === 'radon' && !hasValidMeasurementDates(ficha)) {
+        showToast('La fecha final no puede ser anterior a la fecha inicial', 'warning', 4000);
+        if (currentFichaId === id) {
+          document.getElementById('section-3')?.classList.add('expanded');
+          const finalInput = document.getElementById('f-fecha-fin');
+          finalInput?.classList.add('error');
+          finalInput?.focus();
+          finalInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+      const { blob, filename } = await PDFGen.generate(ficha, fotos);
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        showToast('PDF compartido', 'success');
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('PDF descargado', 'success');
+      }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error(err);
       showToast('Error al generar PDF', 'error');
     }

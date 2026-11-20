@@ -275,14 +275,14 @@ const PDFGen = (() => {
         [ labelCell('Uso del piso semienterrado o sótano'), { content: basementUse, colSpan: 3 } ],
       ]);
       if (ficha.posicionPisoBajo) {
-        checkPageBreak(62);
+        checkPageBreak(76);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.setTextColor(...COLORS.labelText);
         doc.text('Esquema de la posición seleccionada', margin, y);
-        y += 4;
+        y += 14;
         drawGroundPosition(doc, ficha.posicionPisoBajo, margin + 28, y, contentW - 56, 48);
-        y += 52;
+        y += 62;
       }
 
       checkPageBreak(42);
@@ -292,15 +292,8 @@ const PDFGen = (() => {
       doc.text('Características de la construcción', margin, y);
       y += 4;
       autoTable([
-        [ labelCell('Año de construcción'), { content: ficha.anoConstruccion || '—', colSpan: 3 } ],
-        [ labelCell('Tipos de terreno'), { content: listSummary(ficha.tiposTerreno), colSpan: 3 } ],
-        [ labelCell('Materiales de construcción'), { content: listSummary(ficha.materialesConstruccion), colSpan: 3 } ],
-        [ labelCell('Climatización'), { content: listSummary(ficha.climatizacion), colSpan: 3 } ],
-      ]);
-
-      doc.addPage();
-      y = margin;
-      autoTable([
+        [ labelCell('Año'), valueCell(ficha.anoConstruccion), labelCell('Terreno'), valueCell(listSummary(ficha.tiposTerreno)) ],
+        [ labelCell('Materiales'), valueCell(listSummary(ficha.materialesConstruccion), 1), labelCell('Climatización'), valueCell(listSummary(ficha.climatizacion)) ],
         [ labelCell('Humedad en paredes'), ynCell(ficha.humedadParedes), labelCell('Grietas o fisuras'), ynCell(ficha.grietasParedes) ],
       ]);
 
@@ -406,9 +399,9 @@ const PDFGen = (() => {
       doc.text(`FOTOGRAFÍA ${i + 1} DE ${fotos.length}`, margin + 4, fy + 6.2);
       fy += 9 + 4;
 
-      // Espacio disponible para la imagen (deja 10mm abajo para el caption)
-      const availW = contentW;
-      const availH = pageH - fy - margin - 10;
+      // El recuadro conserva la proporción original y deja margen alrededor de fotos grandes.
+      const availW = contentW * 0.82;
+      const availH = (pageH - fy - margin - 10) * 0.76;
 
       try {
         const dataUrl = await blobToDataUrl(fotos[i].blob);
@@ -453,6 +446,7 @@ const PDFGen = (() => {
       doc.text(`Pág. ${p} / ${total}`, pageW - margin, pageH - 8, { align: 'right' });
     }
 
+    let filename;
     if (ficha.tipo === 'radon') {
       const date = ficha.fecha || new Date().toISOString().substring(0, 10);
       const parts = [
@@ -461,13 +455,14 @@ const PDFGen = (() => {
         safeFilenamePart(ficha.nombresCompletos, 'SinNombre'),
         safeFilenamePart(date, 'SinFecha'),
       ];
-      doc.save(`Radon_${parts.join('_')}.pdf`);
+      filename = `Radon_${parts.join('_')}.pdf`;
     } else {
       const fichaName = ficha.cueva;
       const baseName = fichaName ? (ficha.punto ? `${fichaName}_${ficha.punto}` : fichaName) : 'Ficha';
       const safeName = baseName.replace(/[^a-zA-Z0-9_\- ]/g, '_');
-      doc.save(`Ficha_${safeName}_${ficha.fecha || new Date().toISOString().substring(0, 10)}.pdf`);
+      filename = `Ficha_${safeName}_${ficha.fecha || new Date().toISOString().substring(0, 10)}.pdf`;
     }
+    return { blob: doc.output('blob'), filename };
   }
 
   function blobToDataUrl(blob) {
