@@ -1066,7 +1066,7 @@ body {
 .start-intro .eyebrow { color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; }
 .start-intro h1 { margin: 8px 0; font-size: clamp(28px, 6vw, 38px); line-height: 1.15; letter-spacing: -.8px; }
 .start-intro p:last-child { color: var(--text-secondary); font-size: 15px; }
-.type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
 .type-card { min-height: 250px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: var(--text); background: linear-gradient(145deg, var(--card), var(--surface)); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition); }
 .type-card:hover { transform: translateY(-3px); border-color: var(--border-light); box-shadow: var(--shadow-lg); }
 .type-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
@@ -1076,6 +1076,8 @@ body {
 .cave-art svg path:first-child { fill: rgba(74,158,255,.12); }
 .radon-art { color: var(--warning); background: linear-gradient(135deg, rgba(251,191,36,.15), rgba(248,113,113,.06)); }
 .radon-art svg circle:first-child { fill: currentColor; stroke: none; }
+.experiment-art { color: #4ade80; background: linear-gradient(135deg, rgba(74,222,128,.15), rgba(0,176,240,.06)); }
+.experiment-launch-card .type-action { color: #4ade80; }
 .type-name { font-size: 21px; font-weight: 700; }
 .type-copy { margin-top: 4px; color: var(--text-secondary); font-size: 13px; }
 .type-action { margin-top: auto; padding-top: 18px; font-size: 13px; font-weight: 600; color: var(--primary); }
@@ -1084,6 +1086,97 @@ body {
 .collection-switch { display: inline-flex; align-items: center; justify-content: center; width: fit-content; margin: 0 0 16px; padding: 9px 15px; color: var(--text); background: var(--primary-dim); border: 1px solid rgba(74,158,255,.32); border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background var(--transition), border-color var(--transition), transform var(--transition); }
 .collection-switch:hover { color: #fff; background: rgba(74,158,255,.24); border-color: var(--primary); }
 .collection-switch:active { transform: scale(.97); }
+
+/* Módulo local de experimentos */
+.experiment-screen { width: min(100%, 1000px); min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); }
+.experiment-header { position: sticky; top: 0; z-index: 100; min-height: calc(64px + var(--safe-top)); display: flex; align-items: center; gap: 10px; padding: calc(var(--safe-top) + 6px) 16px 8px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.experiment-header-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.experiment-actions-menu { position: relative; flex: 0 0 auto; }
+.experiment-actions-menu > summary { width: 42px; height: 42px; display: grid; place-items: center; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; list-style: none; }
+.experiment-actions-menu > summary::-webkit-details-marker { display: none; }
+.experiment-actions-menu > summary svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.experiment-actions-menu[open] > summary { color: var(--primary); border-color: var(--primary); }
+.experiment-actions-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 120; width: min(260px, calc(100vw - 32px)); padding: 6px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+.experiment-actions-panel button { width: 100%; padding: 11px 12px; color: var(--text); text-align: left; background: transparent; border: 0; border-radius: var(--radius-sm); font: inherit; font-size: 13px; cursor: pointer; }
+.experiment-actions-panel button:hover, .experiment-actions-panel button:focus-visible { background: var(--primary-dim); outline: none; }
+.experiment-title { font-size: 17px; font-weight: 700; }
+.experiment-content { width: 100%; max-width: 760px; margin: 0 auto; padding: 18px 16px calc(36px + var(--safe-bottom)); }
+.experiment-list { display: grid; gap: 12px; }
+.experiment-card, .experiment-panel, .experiment-summary, .experiment-species-panel { padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.experiment-card.is-archived { opacity: .7; }
+.experiment-card-main { width: 100%; display: grid; gap: 6px; color: var(--text); text-align: left; background: transparent; border: 0; cursor: pointer; }
+.experiment-card-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.experiment-code { color: var(--primary); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.experiment-local-status { color: var(--warning); font-size: 11px; }
+.experiment-card-name { font-size: 17px; font-weight: 700; }
+.experiment-card-meta { color: var(--text-secondary); font-size: 12px; }
+.experiment-card-actions, .experiment-bottom-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.experiment-form { display: grid; gap: 14px; }
+.experiment-panel h2, .experiment-review h2, .experiment-species-panel h2, .experiment-summary h2 { margin-bottom: 12px; font-size: 16px; }
+.experiment-field { display: grid; gap: 6px; margin: 10px 0; color: var(--text-secondary); font-size: 13px; }
+.experiment-field input { width: 100%; min-height: 42px; padding: 10px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); font: inherit; }
+.experiment-field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.experiment-field-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.experiment-species-row { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.experiment-species-row > strong { color: var(--text); font-size: 13px; }
+.experiment-control { display: flex; align-items: flex-start; gap: 9px; margin: 12px 0; color: var(--text); font-size: 13px; }
+.experiment-control input { margin-top: 4px; accent-color: var(--primary); }
+.experiment-treatment-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin: 10px 0; }
+.experiment-treatment-option { min-height: 54px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); }
+.experiment-treatment-option-code { flex: 0 0 auto; min-width: 32px; color: var(--primary); font-size: 12px; font-weight: 800; }
+.experiment-treatment-option-name { color: var(--text-secondary); font-size: 13px; overflow-wrap: anywhere; }
+.experiment-review { padding: 16px; color: var(--text); background: var(--primary-dim); border: 1px solid rgba(74,158,255,.35); border-radius: var(--radius-lg); }
+.experiment-review p, .experiment-summary p { margin-top: 6px; color: var(--text-secondary); font-size: 13px; }
+.experiment-review.has-error { border-color: var(--danger); }
+.experiment-review-species { overflow-wrap: anywhere; }
+.experiment-summary { margin-bottom: 14px; }
+.experiment-species-panel { margin: 12px 0; }
+.experiment-species-panel h2 small { color: var(--text-secondary); font-weight: 500; }
+.experiment-mortality-trigger { margin-top: 12px; }
+.experiment-feature-action { border: 1px solid rgba(255,255,255,.28); box-shadow: 0 3px 12px rgba(74,158,255,.2); }
+.experiment-feature-action:hover { border-color: rgba(255,255,255,.55); box-shadow: 0 5px 16px rgba(74,158,255,.32); transform: translateY(-1px); }
+.experiment-access-screen { min-height: 100dvh; align-items: center; justify-content: center; padding: 24px; }
+.experiment-access-card { width: min(100%, 420px); padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.experiment-access-card h1 { margin: 8px 0; font-size: 22px; }
+.experiment-access-card > p, .experiment-access-card form small { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.experiment-access-icon { font-size: 32px; }
+.experiment-access-card form { display: grid; gap: 9px; margin-top: 20px; }
+.experiment-access-card label { color: var(--text); font-size: 13px; font-weight: 600; }
+.experiment-access-card input { width: 100%; min-height: 48px; padding: 10px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); font: inherit; font-size: 20px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.experiment-access-card input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.experiment-access-submit { margin-top: 6px; }
+.experiment-treatment-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 8px; }
+.experiment-treatment { display: grid; gap: 4px; padding: 12px; color: var(--text); text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+.experiment-treatment:hover { border-color: var(--primary); }
+.experiment-treatment span { color: var(--text-secondary); font-size: 11px; }
+.experiment-treatment .experiment-treatment-count { color: var(--success); }
+.experiment-matrix-screen { width: 100%; max-width: none; min-height: 100dvh; }
+.experiment-matrix-help { padding: 10px 16px; color: var(--text-secondary); font-size: 12px; }
+.experiment-matrix-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; }
+.experiment-matrix { border-collapse: separate; border-spacing: 0; font-size: 11px; white-space: nowrap; }
+.experiment-matrix th, .experiment-matrix td { min-width: 82px; padding: 5px; text-align: center; background: var(--surface); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.experiment-matrix thead th { position: sticky; top: 0; z-index: 2; color: var(--text); }
+.experiment-matrix th small, .experiment-matrix .sample-column small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: 10px; font-weight: 400; }
+.experiment-matrix .sample-column { position: sticky; left: 0; z-index: 3; min-width: 190px; text-align: left; }
+.experiment-matrix td select { width: 100%; min-height: 34px; color: var(--text); text-align: center; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; font-weight: 700; }
+.experiment-matrix td.state-emergio select { color: #052e16; background: #86efac; }
+.experiment-matrix td.state-murio select { color: #450a0a; background: #fca5a5; }
+.experiment-matrix td.state-siembra select { color: #172554; background: #bfdbfe; }
+.experiment-matrix td.state-no_emergio select { color: var(--text-secondary); background: #475569; }
+.experiment-matrix td.state-observacion select { color: #713f12; background: #fde047; }
+.experiment-matrix-footer { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px calc(12px + var(--safe-bottom)); color: var(--text-secondary); background: var(--surface); font-size: 11px; }
+.experiment-mortality-screen { width: 100%; max-width: 1120px; }
+.mortality-content { max-width: 1020px; }
+.mortality-chart-card, .mortality-summary { margin-bottom: 16px; padding: 14px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.mortality-chart-card svg { display: block; width: 100%; height: auto; background: #fff; border-radius: var(--radius); }
+.mortality-summary h2 { margin: 0 0 12px; font-size: 16px; }
+.mortality-table-scroll { width: 100%; overflow-x: auto; }
+.mortality-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mortality-table th, .mortality-table td { padding: 9px 10px; text-align: left; border: 1px solid var(--border); white-space: nowrap; }
+.mortality-table th { color: var(--text); background: var(--primary-dim); font-weight: 700; }
+.mortality-table td { color: var(--text-secondary); }
+.mortality-method-note { margin: 12px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.mortality-export-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding: 6px 0 calc(20px + var(--safe-bottom)); }
 
 @media (max-width: 520px) {
   .start-screen { justify-content: flex-start; padding-top: max(88px, calc(var(--safe-top) + 78px)); }
@@ -1141,6 +1234,13 @@ body {
   gap: 10px;
   justify-content: flex-end;
 }
+
+.pdf-preview-overlay { position: fixed; inset: 0; z-index: 800; display: flex; flex-direction: column; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); background: #e8edf4; }
+.pdf-preview-header { min-height: 58px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; color: var(--text); background: var(--surface); border-bottom: 1px solid var(--border); }
+.pdf-preview-filename { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.pdf-preview-actions { display: flex; align-items: center; gap: 6px; }
+.pdf-preview-actions .btn { white-space: nowrap; text-decoration: none; }
+.pdf-preview-frame { width: 100%; min-height: 0; flex: 1; border: 0; background: #fff; }
 
 @keyframes fadeIn {
   from { opacity: 0; }

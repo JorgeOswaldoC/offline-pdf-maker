@@ -114,19 +114,34 @@
     location.hash = q ? `${path}?${q}` : path;
   }
 
-  window.addEventListener('hashchange', render);
+  window.addEventListener('hashchange', () => {
+    render().catch(showStartupError);
+  });
 
   // =========================================
   // Main Render
   // =========================================
   async function render() {
     const { path, params } = getRoute();
+    const protectedExperimentRoutes = ['experiments', 'experiment', 'experiment-matrix', 'experiment-mortality'];
+    if (protectedExperimentRoutes.includes(path) && !Experiments.hasAccess()) {
+      Experiments.renderAccess(document.getElementById('app'), { navigate, toast: showToast, onUnlock: render });
+      return;
+    }
     if (path === 'form') {
       await renderForm(params.id || 'new', params.type || params.tipo || 'cave');
     } else if (path === 'home') {
       await renderHome(params.type || params.tipo || 'cave');
     } else if (path === 'start') {
       renderStart();
+    } else if (path === 'experiments') {
+      await Experiments.render(document.getElementById('app'), { navigate, toast: showToast, confirm });
+    } else if (path === 'experiment') {
+      await Experiments.renderDetail(document.getElementById('app'), params.id, { navigate, toast: showToast, confirm });
+    } else if (path === 'experiment-matrix') {
+      await Experiments.renderMatrix(document.getElementById('app'), params, { navigate, toast: showToast, confirm });
+    } else if (path === 'experiment-mortality') {
+      await Experiments.renderMortality(document.getElementById('app'), params, { navigate, toast: showToast });
     } else {
       renderStart();
     }
@@ -149,12 +164,17 @@
           </button>
           <button class="type-card radon-card" data-type="radon">
             <span class="type-art radon-art" aria-hidden="true"><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="8"/><path d="M46 30 34 10Q28 7 24 13L37 35M58 37 82 35Q87 39 83 45L59 45M43 47 34 69Q37 75 44 73L51 50"/><circle cx="50" cy="40" r="30"/></svg></span>
-            <span class="type-name">Radón</span><span class="type-copy">Registro de sitios y medición de radón</span><span class="type-action">Abrir fichas</span>
+            <span class="type-name">Radón en casas</span><span class="type-copy">Registro de sitios y medición de radón</span><span class="type-action">Abrir fichas</span>
+          </button>
+          <button class="type-card experiment-launch-card" data-experiments>
+            <span class="type-art experiment-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M50 68V39"/><path d="M50 51C27 51 18 39 20 17c21-2 34 8 30 34Z"/><path d="M50 58c2-19 14-28 31-26 0 18-9 28-31 30Z"/><path d="M28 24c8 8 14 16 20 27M73 38c-9 5-16 12-22 22"/></svg></span>
+            <span class="type-name">Experimento Plantas</span><span class="type-copy">Diseño y registro de emergencia y supervivencia de semillas.</span><span class="type-action">Abrir fichas</span>
           </button>
         </section>
         <p class="start-footnote">Tus registros se guardan en este dispositivo.</p>
       </main>`;
-    $$('.type-card').forEach(card => card.addEventListener('click', () => navigate('home', { type: card.dataset.type })));
+    $$('.type-card[data-type]').forEach(card => card.addEventListener('click', () => navigate('home', { type: card.dataset.type })));
+    $('[data-experiments]').addEventListener('click', () => navigate('experiments'));
     $('#start-menu-btn').addEventListener('click', (e) => showHomeMenu(e));
   }
 
@@ -173,8 +193,8 @@
       <div class="home-screen">
         <header class="app-header">
           <div class="header-title">
-            Fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'}
-            <div class="header-subtitle">App de campo — ${type === 'radon' ? 'medición de radón' : 'exploración subterránea'}</div>
+            Fichas de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'}
+            <div class="header-subtitle">App de campo — ${type === 'radon' ? 'medición de radón en casas' : 'exploración subterránea'}</div>
           </div>
           <div class="header-status">
             <div class="status-dot" id="status-dot"></div>
@@ -220,7 +240,7 @@
       <div class="empty-state">
         <div class="empty-icon">${type === 'radon' ? '☢️' : '🗺️'}</div>
         <div class="empty-title">Sin fichas aún</div>
-        <div class="empty-subtitle">Toca + para crear tu primera ficha de ${type === 'radon' ? 'Radón' : 'Cuevas'}</div>
+        <div class="empty-subtitle">Toca + para crear tu primera ficha de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'}</div>
       </div>`;
   }
 
@@ -284,10 +304,10 @@
     menu.style.cssText = `top:${rect.bottom + 4}px; right:${document.documentElement.clientWidth - rect.right}px`;
     const installedAlready = isInStandaloneMode();
     const exportOptions = type
-      ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón' : 'Cuevas'} (JSON)</button>`
+      ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'} (JSON)</button>`
       : `<button class="menu-item" data-menu="export-all">💾 Exportar todas las fichas (JSON)</button>
          <button class="menu-item" data-menu="export-cave">🗺️ Exportar fichas de Cuevas</button>
-         <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón</button>`;
+         <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón en casas</button>`;
     menu.innerHTML = `
       <button class="menu-item" data-menu="import">📂 Importar fichas (JSON)</button>
       <div class="divider"></div>
@@ -421,7 +441,7 @@
         <header class="app-header">
           <button class="header-back" id="back-btn" title="Volver">←</button>
           <div class="header-title">
-            ${esc(type === 'radon' ? (ficha.codigoCasa || ficha.nombresCompletos || 'Nueva ficha de Radón') : (ficha.cueva || 'Nueva Ficha'))}
+            ${esc(type === 'radon' ? (ficha.codigoCasa || ficha.nombresCompletos || 'Nueva ficha de Radón en casas') : (ficha.cueva || 'Nueva Ficha'))}
             <div class="header-subtitle" id="save-status-header">Auto-guardado</div>
           </div>
           <button class="btn-icon" id="form-menu-btn" aria-label="Más opciones">⋮</button>
@@ -1407,24 +1427,73 @@
         return;
       }
       const { blob, filename } = await PDFGen.generate(ficha, fotos);
-      const file = new File([blob], filename, { type: 'application/pdf' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: filename });
-        showToast('PDF compartido', 'success');
-      } else {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
-        showToast('PDF descargado', 'success');
-      }
+      showPdfPreview(blob, filename);
+      showToast('PDF listo para revisar', 'success');
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error(err);
       showToast('Error al generar PDF', 'error');
     }
+  }
+
+  function showPdfPreview(blob, filename) {
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    const objectUrl = URL.createObjectURL(file);
+    const overlay = document.createElement('section');
+    overlay.className = 'pdf-preview-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', `Vista previa de ${filename}`);
+
+    const header = document.createElement('header');
+    header.className = 'pdf-preview-header';
+    const closeButton = document.createElement('button');
+    closeButton.className = 'btn-icon';
+    closeButton.type = 'button';
+    closeButton.setAttribute('aria-label', 'Cerrar vista previa');
+    closeButton.textContent = '×';
+    const fileTitle = document.createElement('div');
+    fileTitle.className = 'pdf-preview-filename';
+    fileTitle.textContent = filename;
+    const actions = document.createElement('div');
+    actions.className = 'pdf-preview-actions';
+    const downloadLink = document.createElement('a');
+    downloadLink.className = 'btn btn-ghost btn-sm';
+    downloadLink.href = objectUrl;
+    downloadLink.download = filename;
+    downloadLink.textContent = 'Descargar';
+    const shareButton = document.createElement('button');
+    shareButton.className = 'btn btn-primary btn-sm';
+    shareButton.type = 'button';
+    shareButton.textContent = 'Compartir';
+    actions.append(downloadLink, shareButton);
+    header.append(closeButton, fileTitle, actions);
+
+    const frame = document.createElement('iframe');
+    frame.className = 'pdf-preview-frame';
+    frame.title = `Vista previa del archivo ${filename}`;
+    frame.src = objectUrl;
+    overlay.append(header, frame);
+    document.body.appendChild(overlay);
+
+    const close = () => {
+      overlay.remove();
+      URL.revokeObjectURL(objectUrl);
+      document.removeEventListener('keydown', onKeydown);
+    };
+    const onKeydown = (event) => { if (event.key === 'Escape') close(); };
+    closeButton.addEventListener('click', close);
+    document.addEventListener('keydown', onKeydown);
+    shareButton.addEventListener('click', async () => {
+      if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+        showToast('Descarga el PDF para compartirlo desde tu dispositivo', 'warning', 4000);
+        return;
+      }
+      try {
+        await navigator.share({ files: [file], title: filename });
+      } catch (err) {
+        if (err.name !== 'AbortError') showToast('No se pudo abrir el menú para compartir', 'error');
+      }
+    });
   }
 
   // =========================================
@@ -1615,17 +1684,32 @@
   // Init
   // =========================================
   async function init() {
+    const loadingTimer = setTimeout(() => {
+      if (document.querySelector('.loading-screen')) {
+        showStartupError(new Error('La app tardó demasiado en iniciar. Revisa si hay otra ventana de Ficharium abierta e inténtalo de nuevo.'));
+      }
+    }, 12000);
     try {
       await render();
     } catch (err) {
       console.error('Init error:', err);
-      document.getElementById('app').innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Error al cargar</div>
-          <div class="empty-subtitle">${err.message}</div>
-        </div>`;
+      showStartupError(err);
+    } finally {
+      clearTimeout(loadingTimer);
     }
+  }
+
+  function showStartupError(err) {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-title">No se pudo abrir la app</div>
+        <div class="empty-subtitle" data-startup-error></div>
+        <button class="btn btn-primary" data-startup-retry>Volver a intentar</button>
+      </div>`;
+    app.querySelector('[data-startup-error]').textContent = err?.message || 'Comprueba la conexión local e inténtalo de nuevo.';
+    app.querySelector('[data-startup-retry]').addEventListener('click', () => location.reload());
   }
 
   init();

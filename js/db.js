@@ -1,10 +1,10 @@
 /**
  * IndexedDB wrapper for Ficha Técnica de Medición
- * Stores: fichas, fotos
+ * Stores: fichas, fotos, experiments
  */
 const DB = (() => {
   const DB_NAME = 'fichaMedicion';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   let db = null;
 
   function open() {
@@ -25,14 +25,21 @@ const DB = (() => {
           const fotosStore = database.createObjectStore('fotos', { keyPath: 'id', autoIncrement: true });
           fotosStore.createIndex('fichaId', 'fichaId', { unique: false });
         }
+
+        if (!database.objectStoreNames.contains('experiments')) {
+          const experimentsStore = database.createObjectStore('experiments', { keyPath: 'id' });
+          experimentsStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+        }
       };
 
       req.onsuccess = (e) => {
         db = e.target.result;
+        db.onversionchange = () => { db.close(); db = null; };
         resolve(db);
       };
 
       req.onerror = () => reject(req.error);
+      req.onblocked = () => reject(new Error('La base de datos está ocupada por otra ventana de Ficharium. Cierra las otras pestañas o ventanas de la app y vuelve a intentarlo.'));
     });
   }
 
@@ -116,5 +123,36 @@ const DB = (() => {
     await Promise.all(fotos.map(f => promisify(store.delete(f.id))));
   }
 
-  return { createFicha, getFicha, updateFicha, deleteFicha, getAllFichas, addFoto, getFotos, deleteFoto, deleteAllFotos };
+  // ---- Experimentos ----
+
+  async function createExperiment(data) {
+    await open();
+    const now = new Date().toISOString();
+    const experiment = { id: data.id || crypto.randomUUID(), createdAt: now, updatedAt: now, ...data };
+    await promisify(tx('experiments', 'readwrite').add(experiment));
+    return experiment;
+  }
+
+  async function getExperiment(id) {
+    await open();
+    return promisify(tx('experiments').get(id));
+  }
+
+  async function updateExperiment(id, data) {
+    await open();
+    const store = tx('experiments', 'readwrite');
+    const existing = await promisify(store.get(id));
+    if (!existing) throw new Error('Experiment not found');
+    const updated = { ...existing, ...data, id, updatedAt: new Date().toISOString() };
+    await promisify(tx('experiments', 'readwrite').put(updated));
+    return updated;
+  }
+
+  async function getAllExperiments() {
+    await open();
+    return promisify(tx('experiments').getAll());
+  }
+
+  return { createFicha, getFicha, updateFicha, deleteFicha, getAllFichas, addFoto, getFotos, deleteFoto, deleteAllFotos,
+    createExperiment, getExperiment, updateExperiment, getAllExperiments };
 })();

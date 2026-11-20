@@ -404,8 +404,8 @@ const PDFGen = (() => {
       const availH = (pageH - fy - margin - 10) * 0.76;
 
       try {
-        const dataUrl = await blobToDataUrl(fotos[i].blob);
-        const dims    = await getImageDimensions(dataUrl);
+        const image = await prepareImageForPdf(fotos[i].blob);
+        const dims = { w: image.width, h: image.height };
 
         // Escala uniforme para que quepa sin recortar
         const scale  = Math.min(availW / dims.w, availH / dims.h);
@@ -416,8 +416,7 @@ const PDFGen = (() => {
         const ix = margin + (availW - pdfW) / 2;
         const iy = fy     + (availH - pdfH) / 2;
 
-        const ext = fotos[i].blob.type.includes('png') ? 'PNG' : 'JPEG';
-        doc.addImage(dataUrl, ext, ix, iy, pdfW, pdfH, undefined, 'MEDIUM');
+        doc.addImage(image.dataUrl, image.format, ix, iy, pdfW, pdfH, undefined, 'MEDIUM');
       } catch {
         doc.setFillColor(220, 220, 220);
         doc.rect(margin, fy, contentW, availH, 'F');
@@ -465,22 +464,43 @@ const PDFGen = (() => {
     return { blob: doc.output('blob'), filename };
   }
 
-  function blobToDataUrl(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
+  async function prepareImageForPdf(blob) {
+    const format = blob.type.toLowerCase().includes('png') ? 'PNG' : 'JPEG';
+    const mimeType = format === 'PNG' ? 'image/png' : 'image/jpeg';
+    let bitmap;
+    if (typeof createImageBitmap === 'function') {
+      try {
+        bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+      } catch {
+        try { bitmap = await createImageBitmap(blob); } catch { bitmap = null; }
+      }
+    }
 
-  function getImageDimensions(dataUrl) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload  = () => resolve({ w: img.naturalWidth,  h: img.naturalHeight });
-      img.onerror = () => resolve({ w: 1, h: 1 });
-      img.src = dataUrl;
-    });
+    const canvas = document.createElement('canvas');
+    if (bitmap) {
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      bitmap.close?.();
+    } else {
+      const url = URL.createObjectURL(blob);
+      try {
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    const dataUrl = canvas.toDataURL(mimeType, 0.92);
+    return { dataUrl, width: canvas.width, height: canvas.height, format };
   }
 
   return { generate };

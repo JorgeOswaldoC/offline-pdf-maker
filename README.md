@@ -1,19 +1,20 @@
-# Fichas de campo: Cuevas y Radón
+# Ficharium: Cuevas, Radón y Experimento Plantas
 
-App móvil para registrar mediciones de cuevas y radón. Funciona **100% offline** una vez instalada — sin conexión a internet, sin servidores, sin cuentas.
+App móvil para registrar mediciones de cuevas, radón y experimentos de semillas. Funciona **offline** una vez instalada; los registros se conservan localmente en cada dispositivo.
 
-🔗 **[Abrir la app](https://hernanx21.github.io/offline-pdf-maker/)**
+🔗 **[Abrir la app](https://jorgeoswaldoc.github.io/offline-pdf-maker/)**
 
 ---
 
 ## ¿Qué hace?
 
-Al iniciar, elige entre dos colecciones locales de fichas:
+Al iniciar, elige una de las secciones locales:
 
 - **Cuevas:** conserva el formulario de medición existente.
 - **Radón:** reúne datos generales obligatorios, características de la vivienda con esquemas del nivel respecto al terreno y datos del electreto y la medición; las coordenadas se pueden editar u obtener desde el GPS.
+- **Experimento Plantas:** permite diseñar tratamientos, registrar siembra y seguimiento de unidades, generar etiquetas y ver gráficas de mortalidad. La sección pide un código de acceso una vez por dispositivo.
 
-Cada colección mantiene su propia lista y permite exportar PDF y JSON.
+Las fichas de Cuevas y Radón permiten exportar PDF y JSON. Experimento Plantas permite respaldar cada experimento en JSON, además de exportar sus tablas a Excel y CSV.
 
 La ficha de Cuevas incluye:
 
@@ -62,7 +63,7 @@ La app se puede instalar como una app nativa desde el navegador — sin pasar po
 ## Uso básico
 
 ### Crear una ficha
-1. Elige **Cuevas** o **Radón** en la pantalla inicial.
+1. Elige **Cuevas**, **Radón** o **Experimento Plantas** en la pantalla inicial.
 2. Toca el botón **+** en la lista correspondiente.
 3. Completa las secciones del formulario. En Radón, puedes escribir las coordenadas o usar el GPS; los campos marcados con `*` son obligatorios para exportar el PDF.
 4. Los datos se guardan automáticamente mientras escribís — no hay botón "Guardar"
@@ -87,6 +88,7 @@ Toca **"Exportar PDF"** al final del formulario, o desde la lista de fichas en e
 - **Exportar una ficha:** en el menú ⋮ dentro del formulario → "Exportar JSON"
 - **Exportar todas:** en el menú ⋮ del home → "Exportar todas (JSON)"
 - **Importar:** en el menú ⋮ del home → "Importar fichas (JSON)" → seleccioná el archivo
+- **Respaldar un experimento:** abre la ficha del experimento → menú ☰ → "Respaldar experimento (JSON)"
 
 ---
 
