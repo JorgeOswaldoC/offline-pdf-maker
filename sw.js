@@ -2,18 +2,19 @@
  * Service Worker — cache-first strategy
  * Pre-caches all app assets on install
  */
-const CACHE_NAME = 'ficha-medicion-v52';
+const CACHE_NAME = 'ficha-medicion-v54';
 
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=52',
-  './js/app.js?v=51',
+  './css/styles.css?v=54',
+  './js/app.js?v=54',
   './js/db.js?v=45',
-  './js/pdf.js',
-  './js/experiments.js?v=49',
-  './js/close-chamber.js?v=52',
+  './js/radon-calculation.js?v=54',
+  './js/pdf.js?v=53',
+  './js/experiments.js?v=53',
+  './js/close-chamber.js?v=54',
   './js/xlsx.js',
   './js/libs/jspdf.umd.min.js',
   './js/libs/jspdf.plugin.autotable.min.js',

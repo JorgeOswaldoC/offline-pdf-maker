@@ -1,135 +1,66 @@
-# Ficharium: Cuevas, Radón y Experimento Plantas
+# Ficharium
 
-App móvil para registrar mediciones de cuevas, radón y experimentos de semillas. Funciona **offline** una vez instalada; los registros se conservan localmente en cada dispositivo.
+Ficharium es una aplicación web para registrar fichas de Cuevas, Radón en Casas, Experimento Plantas y Close Chamber. Funciona en computadoras y teléfonos; después de cargar sus recursos puede utilizarse sin conexión. Los datos se guardan en el navegador del dispositivo.
 
-🔗 **[Abrir la app](https://jorgeoswaldoc.github.io/offline-pdf-maker/)**
+**[Abrir Ficharium](https://jorgeoswaldoc.github.io/offline-pdf-maker/)** · **[Descargar el manual de uso (PDF)](Manual-Ficharium.pdf)**
 
----
+## Antes de empezar
 
-## ¿Qué hace?
+- Entra desde el enlace anterior. En Android puedes instalarla desde el menú del navegador; en iPhone, abre la página en Safari y selecciona **Compartir → Añadir a pantalla de inicio**.
+- El almacenamiento pertenece al navegador y a la dirección utilizada. Los registros de GitHub Pages, del servidor local y de otros dispositivos son independientes; no se sincronizan automáticamente.
+- Exporta respaldos JSON antes de cambiar de dispositivo, borrar datos del navegador o limpiar la aplicación. Las fotografías se incluyen en los respaldos de las fichas que las contienen.
+- La sección Experimento Plantas solicita su código una vez por navegador y dirección. Es una barrera de acceso local, no un sistema de cuentas ni de cifrado de los datos.
 
-Al iniciar, elige una de las secciones locales:
+## Colecciones
 
-- **Cuevas:** conserva el formulario de medición existente.
-- **Radón:** reúne datos generales obligatorios, características de la vivienda con esquemas del nivel respecto al terreno y datos del electreto y la medición; las coordenadas se pueden editar u obtener desde el GPS.
-- **Experimento Plantas:** permite diseñar tratamientos, registrar siembra y seguimiento de unidades, generar etiquetas y ver gráficas de mortalidad. La sección pide un código de acceso una vez por dispositivo.
+### Cuevas
 
-Las fichas de Cuevas y Radón permiten exportar PDF y JSON. Experimento Plantas permite respaldar cada experimento en JSON, además de exportar sus tablas a Excel y CSV.
+Crea una ficha y completa las secciones de ubicación, parámetros ambientales, equipos, observaciones y fotografías. Los campos se guardan automáticamente. Desde la ficha o su tarjeta puedes exportar PDF o JSON; en la colección puedes importar y respaldar fichas.
 
-La ficha de Cuevas incluye:
+### Radón en Casas
 
-| Sección | Contenido |
-|---|---|
-| **1. Detalles de cueva** | Nombre, provincia y cantón manuales, punto, fecha, horario, presencia y tipo de agua, sección transversal |
-| **2. Parámetros ambientales** | Humedad, temperatura, presión, velocidad del viento, CO₂ |
-| **3. Equipos de radiación ionizante** | AlphaE, GammaScout, Dosímetros, SaphyRAD y selección de sonda (Sin sonda, AB16 o GSP145) |
-| **4. Equipos adicionales** | Medidor de radiación cósmica y campo para otro equipo |
-| **5. Observaciones** | Notas libres de campo |
-| **Fotografías** | Fotos adjuntas almacenadas junto a la ficha |
+Registra los datos generales y la ubicación, las características de la vivienda y los datos de medición. En la sección 3 selecciona el tipo de electreto **Short** o **Long**, su código, las fechas y los voltajes. El código de casa es opcional. Se pueden introducir coordenadas manualmente o solicitar las del dispositivo.
 
-La ficha de Radón incluye:
+La tarjeta muestra el nombre, número de cuadra y código de casa si existe, además de provincia, cantón y parroquia. Exporta el PDF o el CSV de una ficha desde su tarjeta o formulario; también puedes descargar un CSV de toda la colección. El CSV contiene los datos generales y de medición, excluyendo el tipo de espacio y el piso de medición.
 
-| Sección | Contenido |
-|---|---|
-| **1. Datos Generales** | Identificación, ubicación territorial, código de casa, número de cuadra y coordenadas GPS |
-| **2. Datos de la vivienda** | Tipología, posición del piso más bajo con esquema, año, terrenos, materiales, climatización, humedad, grietas y uso del sótano o piso semienterrado |
-| **3. Datos de medición** | Electreto, fechas, horas, voltajes, tipo de espacio y piso de medición |
-| **4–5** | Equipos adicionales de medición de radiación ionizante (AlphaE, GammaScout y SaphyRAD), observaciones y fotografías |
+### Experimento Plantas
 
-Cada ficha se puede exportar a **PDF** (formato que replica la ficha Excel original) o a **JSON** para respaldo y transferencia entre dispositivos.
+Después de introducir el código de acceso, crea un diseño con especies, tratamientos, repeticiones, semillas y duración. La aplicación muestra el total de unidades y permite registrar estados por semilla y día. Según los datos disponibles, puedes generar etiquetas, gráficas de mortalidad y exportaciones CSV, Excel, PNG y PDF. El menú permite respaldar cada experimento en JSON. El estado puede marcarse como **Parcial** o **Completado** y volver a cambiarse.
 
----
+### Close Chamber
 
-## Instalación en el dispositivo
+Crea un experimento para un alimento o fertilizante, con marca, origen opcional, responsable, granulometrías, pesos y control opcional. El número de tratamientos es la cantidad de granulometrías multiplicada por la de pesos.
 
-La app se puede instalar como una app nativa desde el navegador — sin pasar por ninguna tienda de apps.
+Cada granulometría tiene una tabla. Añade una fila y selecciona el peso y el tipo de electreto; introduce código, fechas, horas y voltajes. El código de electreto no se puede repetir. Guarda cada fila con el icono correspondiente; para modificar una fila guardada, usa el lápiz y vuelve a guardarla. La fila en edición se muestra amarilla y la guardada, verde. El voltaje final no puede superar al inicial y la fecha final debe ser posterior a la inicial para calcular la concentración.
 
-### Android (Chrome)
-1. Abre la app en Chrome
-2. Toca el menú **⋮** (tres puntos arriba a la derecha en el home)
-3. Selecciona **"Instalar app"**
-4. Confirma en el diálogo que aparece
+Puedes descargar CSV y PDF por experimento, respaldarlo en JSON o descargar un CSV de todos los experimentos. El PDF incluye el diseño y las tablas. También puedes marcar el experimento como completado o volverlo a parcial.
 
-### iPhone / iPad (Safari)
-1. Abre la app en Safari
-2. Toca el botón de **Compartir** ⎙ en la barra inferior
-3. Desplázate y toca **"Añadir a pantalla de inicio"**
-4. Confirma tocando **"Añadir"**
+## Cálculo de concentración de radón
 
-> Una vez instalada, la app funciona completamente sin internet.
+En Close Chamber y en el CSV de Radón en Casas, `Vi` y `Vf` son los voltajes inicial y final, `T` son los días entre las fechas y `BG = 0`:
 
----
+```text
+Short: CF = 0.314473 + 0.260619 × (Vi + Vf) / 2
+Long:  CF = 0.031243 + 0.021880 × (Vi + Vf) / 2
+Concentración [Bq/m³] = (Vi − Vf) / (T × CF) − BG
+```
 
-## Uso básico
+El resultado se redondea a tres decimales. Si faltan el tipo, las fechas o los voltajes, si el tiempo es cero o negativo, o si los voltajes no son válidos, la concentración queda vacía. Los registros anteriores sin tipo de electreto requieren seleccionarlo. Para conservar el punto decimal en hojas de cálculo, la concentración CSV se exporta como texto con un tabulador inicial; CSV no dispone de tipos de celda propios.
 
-### Crear una ficha
-1. Elige **Cuevas**, **Radón** o **Experimento Plantas** en la pantalla inicial.
-2. Toca el botón **+** en la lista correspondiente.
-3. Completa las secciones del formulario. En Radón, puedes escribir las coordenadas o usar el GPS; los campos marcados con `*` son obligatorios para exportar el PDF.
-4. Los datos se guardan automáticamente mientras escribís — no hay botón "Guardar"
+## Respaldos y limpieza
 
-### Navegar las secciones
-Cada sección es un panel colapsable. Toca el encabezado para expandirla o cerrarla.
+En el menú **☰** de la pantalla principal o de cada colección puedes importar JSON y exportar respaldos. El respaldo general incluye fichas, fotografías y experimentos de plantas. Para trasladar datos, exporta el JSON en el dispositivo de origen y luego impórtalo en el de destino. Si importas un identificador ya existente, se actualiza ese registro.
 
-### Indicadores Sí / No
-Los equipos y parámetros usan botones de toggle:
-- **Verde (SI)** — se está midiendo / usando
-- **Rojo (NO)** — no se está midiendo / usando
-- **Sin color** — aún no seleccionado
+**Limpiar caché y datos** elimina las fichas, fotografías, experimentos y caché del navegador tras la confirmación. Haz primero un respaldo JSON y comprueba que el archivo se haya guardado.
 
-### Agregar fotos
-Dentro de la ficha, expande la sección **Fotografías adjuntas** y toca **"Agregar foto"**. Podés tomar una foto con la cámara o elegir una de la galería. Las fotos se almacenan localmente junto con la ficha.
+## Desarrollo y documentación
 
-### Exportar PDF
-Toca **"Exportar PDF"** al final del formulario, o desde la lista de fichas en el home. El PDF incluye todas las secciones con los valores seleccionados y una página completa por cada foto adjunta.
+La aplicación es una PWA estática en HTML, CSS y JavaScript, con IndexedDB, Service Worker, jsPDF y AutoTable locales. No requiere una etapa de compilación ni un servidor de aplicaciones.
 
-### Exportar / Importar JSON
-Útil para hacer backups o transferir fichas entre dispositivos:
-- **Exportar una ficha:** en el menú ⋮ dentro del formulario → "Exportar JSON"
-- **Exportar todas:** en el menú ⋮ del home → "Exportar todas (JSON)"
-- **Importar:** en el menú ⋮ del home → "Importar fichas (JSON)" → seleccioná el archivo
-- **Respaldar un experimento:** abre la ficha del experimento → menú ☰ → "Respaldar experimento (JSON)"
+```bash
+python3 -m http.server 8765
+# Abrir http://localhost:8765/
+node scripts/generar-manual.js
+```
 
----
-
-## Pantalla principal
-
-Desde cada lista podés:
-- Ver las fichas de Cuevas o Radón (ordenadas por última modificación)
-- Volver al selector para cambiar de colección
-- Ver el estado de cada ficha: **✓ Completa** o **⏳ Parcial**
-- Abrir, exportar a PDF, exportar a JSON o eliminar cualquier ficha
-- Acceder al menú ⋮ para importar, exportar todas, instalar la app o limpiar datos
-
----
-
-## Limpiar caché y datos
-
-Si la app presenta problemas o querés resetearla por completo:
-
-1. Exportá todas tus fichas primero: menú ⋮ → **"Exportar todas (JSON)"**
-2. Menú ⋮ → **"Limpiar caché y datos"**
-3. Confirmá con **"Limpiar de todas formas"**
-
-Esto elimina todas las fichas, fotos y caché del dispositivo. Podés volver a importar tus fichas desde el JSON exportado.
-
----
-
-## Indicador de conectividad
-
-El header muestra un punto verde **(Online)** o amarillo **(Offline)**. En modo offline todos los datos siguen disponibles — los cambios se guardan localmente en el dispositivo.
-
----
-
-## Tecnología
-
-- App web progresiva (PWA) — HTML, CSS y JavaScript sin frameworks ni servidores
-- Almacenamiento local con **IndexedDB** (sin límite práctico de fichas)
-- Generación de PDF con **jsPDF** — todo procesado en el dispositivo, sin subir datos a internet
-- Funciona offline mediante **Service Worker** con estrategia cache-first
-
----
-
-## Desarrollo
-
-Ver [CLAUDE.md](CLAUDE.md) para instrucciones técnicas de desarrollo.
+El último comando regenera [Manual-Ficharium.pdf](Manual-Ficharium.pdf) usando jsPDF incluido en el proyecto. **En cada nueva versión deben revisarse y actualizarse tanto este README como el manual PDF**, además de comprobar sus enlaces y contenido. Las instrucciones del proyecto están en [AGENTS.md](AGENTS.md).

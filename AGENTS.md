@@ -24,3 +24,8 @@
 - Keep the Spanish user interface and existing data behavior unchanged unless the task explicitly requests a product change.
 - Never commit exported fichas, photos, credentials, tokens, browser profiles, or other user data.
 - Work on a review branch. Do not push or merge directly to `main` without explicit user authorization.
+
+## Release documentation
+
+- For every new published version, review and update `README.md` and `Manual-Ficharium.pdf` to describe the current application.
+- Update `scripts/generar-manual.js` as needed and regenerate the PDF with `node scripts/generar-manual.js`; verify the generated PDF before publication.

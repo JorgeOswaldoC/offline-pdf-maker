@@ -49,7 +49,7 @@
   function isFichaComplete(ficha) {
     return ficha.tipo === 'radon'
       ? !!(ficha.nombresCompletos && ficha.provincia && ficha.canton && ficha.parroquia
-        && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.codigoElectreto && ficha.fecha
+        && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.tipoElectreto && ficha.codigoElectreto && ficha.fecha
         && ficha.fechaFin && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
       : !!(ficha.cueva && ficha.provincia && ficha.canton && ficha.punto && ficha.fecha && ficha.horaInicio);
   }
@@ -162,7 +162,7 @@
           <div class="start-brand"><img class="brand-mark" src="icons/icon-ficharium.png" alt=""><span>Ficharium</span></div>
           <button class="btn-icon" id="start-menu-btn" aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
-        <section class="start-intro"><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo de campo.</p></section>
+        <section class="start-intro"><svg class="start-intro-logo" viewBox="0 0 120 110" role="img" aria-label="Logo de Ficharium"><rect x="36" y="8" width="66" height="70" rx="3" fill="#f7f0e2"/><rect x="29" y="15" width="66" height="70" rx="3" fill="#e7e0d6"/><rect x="22" y="22" width="66" height="70" rx="3" fill="#f7f0e2"/><path d="M17 42h27l8 9h52c5 0 8 3 8 8v33c0 6-3 9-9 9H17c-6 0-9-3-9-9V51c0-6 3-9 9-9Z" fill="#00b69e"/><rect x="15" y="47" width="22" height="7" rx="3" fill="#ff8626"/><path d="M80 25h6v6h-6z" fill="#ff8626"/><path d="M80 31h6v6h-6z" fill="#ffca2c"/><path d="M80 37h6v6h-6z" fill="#83b82e"/><path d="M80 43h6v6h-6z" fill="#4ba8d6"/></svg><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo.</p></section>
         <section class="type-grid" aria-label="Tipo de ficha">
           <button class="type-card cave-card" data-type="cave">
             <span class="type-art cave-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M8 72 Q18 50 26 36 Q34 19 50 12 Q66 19 74 36 Q82 50 92 72Z"/><path d="M34 72 Q38 54 50 43 Q62 54 66 72Z"/><path d="M18 56 Q33 47 50 49 Q67 47 82 56"/></svg></span>
@@ -213,6 +213,7 @@
 
         <main class="home-content">
           ${fichas.length === 0 ? renderEmptyState(type) : renderFichaList(fichas, type)}
+          ${type === 'radon' && fichas.length ? '<button class="btn btn-primary btn-full collection-export" id="radon-export-all-csv">Descargar CSV de todas las fichas</button>' : ''}
         </main>
 
         ${fichas.length ? '<button class="fab" id="new-ficha-btn" title="Nueva ficha" aria-label="Nueva ficha">+</button>' : ''}
@@ -222,6 +223,7 @@
 
     $('#new-ficha-btn')?.addEventListener('click', () => navigate('form', { id: 'new', type }));
     $('#empty-new-ficha')?.addEventListener('click', () => navigate('form', { id: 'new', type }));
+    $('#radon-export-all-csv')?.addEventListener('click', () => exportRadonCsv(fichas));
     $('#home-menu-btn').addEventListener('click', (e) => showHomeMenu(e, type));
     $('#collection-switch').addEventListener('click', () => navigate('start'));
 
@@ -237,6 +239,9 @@
     });
     $$('[data-action="export-json"]').forEach(el => {
       el.addEventListener('click', () => exportJSON(el.dataset.id));
+    });
+    $$('[data-action="export-csv"]').forEach(el => {
+      el.addEventListener('click', async () => exportRadonCsv([await DB.getFicha(el.dataset.id)]));
     });
     $$('[data-action="delete"]').forEach(el => {
       el.addEventListener('click', () => deleteFicha(el.dataset.id));
@@ -291,6 +296,7 @@
           <button class="ficha-action-btn success" data-action="pdf" data-id="${f.id}" title="Exportar PDF">
             📄 PDF
           </button>
+          ${type === 'radon' ? `<button class="ficha-action-btn" data-action="export-csv" data-id="${esc(f.id)}" title="Exportar CSV">📄 CSV</button>` : ''}
           <button class="ficha-action-btn" data-action="export-json" data-id="${f.id}" title="Exportar JSON">
             💾 JSON
           </button>
@@ -427,7 +433,7 @@
         cueva: '', punto: '', sitio: '', nombresCompletos: '', provincia: '', canton: '', parroquia: '', barrio: '', codigoCasa: '', numeroCuadra: '', latitud: '', longitud: '',
         tipologiaConstruccion: '', tipologiaConstruccionOtro: '', posicionPisoBajo: '', posicionPisoBajoOtro: '', usoSotano: '', usoSotanoOtro: '',
         anoConstruccion: '', tiposTerreno: [], materialesConstruccion: [], climatizacion: [], humedadParedes: null, grietasParedes: null,
-        codigoElectreto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '', voltajeInicial: '', voltajeFinal: '', tipoEspacio: '', tipoEspacioOtro: '', pisoMedicion: '', numeroPisoMedicion: '',
+        tipoElectreto: '', codigoElectreto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '', voltajeInicial: '', voltajeFinal: '', tipoEspacio: '', tipoEspacioOtro: '', pisoMedicion: '', numeroPisoMedicion: '',
         agua: '', aguaTipo: { corriendo: null, estancada: null },
         seccionTransversal: '',
         parametros: { humedad: false, temperatura: false, presion: false, velViento: false, co2: false },
@@ -480,7 +486,8 @@
 
         <div class="form-actions">
           <div class="save-status" id="save-status">💾 Guardado automáticamente</div>
-          <button class="btn btn-primary btn-full btn-lg" id="export-pdf-btn">📄 Exportar PDF</button>
+          <button class="btn btn-primary btn-full" id="export-pdf-btn">📄 Exportar PDF</button>
+          ${type === 'radon' ? `<button class="btn btn-primary btn-full" id="export-csv-btn">📄 Exportar CSV</button>${RadonCalc.noteHtml()}` : ''}
         </div>
       </div>`;
 
@@ -564,6 +571,7 @@
       <div class="form-section" id="section-3">
         <button class="section-toggle" data-section="3"><div class="section-number">3</div><span class="section-title">Datos de medición</span><span class="section-chevron">▼</span></button>
         <div class="section-body">
+          <div class="field"><label for="f-tipo-electreto">Tipo de electreto <span class="required-mark">*</span></label><select id="f-tipo-electreto" name="tipoElectreto" required><option value="">Selecciona una opción</option><option value="Short" ${f.tipoElectreto === 'Short' ? 'selected' : ''}>Short</option><option value="Long" ${f.tipoElectreto === 'Long' ? 'selected' : ''}>Long</option></select></div>
           <div class="field"><label for="f-codigo-electreto">Código del electreto <span class="required-mark">*</span></label><input type="text" id="f-codigo-electreto" name="codigoElectreto" value="${esc(f.codigoElectreto)}" placeholder="Código o identificador del electreto" required></div>
           <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" max="${esc(f.fecha)}" required></div></div>
           <p class="field-validation-message" id="date-validation-error" role="alert">La fecha final no puede ser anterior a la fecha inicial.</p>
@@ -1111,6 +1119,7 @@
 
     // PDF export
     document.getElementById('export-pdf-btn')?.addEventListener('click', () => exportPDF(ficha.id));
+    document.getElementById('export-csv-btn')?.addEventListener('click', async () => { await DB.updateFicha(ficha.id, collectFormData()); exportRadonCsv([await DB.getFicha(ficha.id)]); });
 
     // Photos
     document.getElementById('add-photo-btn')?.addEventListener('click', () => {
@@ -1196,7 +1205,7 @@
     [
       'cueva', 'punto', 'sitio', 'nombresCompletos', 'provincia', 'canton', 'parroquia', 'barrio', 'codigoCasa', 'numeroCuadra', 'latitud', 'longitud',
       'tipologiaConstruccion', 'tipologiaConstruccionOtro', 'posicionPisoBajo', 'posicionPisoBajoOtro', 'usoSotano', 'usoSotanoOtro', 'anoConstruccion',
-      'codigoElectreto', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'voltajeInicial', 'voltajeFinal', 'tipoEspacio', 'tipoEspacioOtro',
+      'tipoElectreto', 'codigoElectreto', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'voltajeInicial', 'voltajeFinal', 'tipoEspacio', 'tipoEspacioOtro',
       'pisoMedicion', 'numeroPisoMedicion', 'seccionTransversal', 'observaciones',
     ].forEach(name => {
       const el = document.querySelector(`[name="${name}"]`) || document.getElementById(`f-${name}`) || document.getElementById(`f-${camelToKebab(name)}`);
@@ -1284,6 +1293,7 @@
     menu.style.cssText = `top:${rect.bottom + 4}px; right:${document.documentElement.clientWidth - rect.right}px`;
     menu.innerHTML = `
       <button class="menu-item" data-menu="pdf">📄 Exportar PDF</button>
+      ${ficha.tipo === 'radon' ? '<button class="menu-item" data-menu="csv">📄 Exportar CSV</button>' : ''}
       <button class="menu-item" data-menu="json">💾 Exportar JSON</button>
       <div class="divider"></div>
       <button class="menu-item danger" data-menu="delete">🗑️ Eliminar ficha</button>`;
@@ -1303,6 +1313,7 @@
       item.addEventListener('click', () => {
         cleanup();
         if (item.dataset.menu === 'pdf') exportPDF(ficha.id);
+        if (item.dataset.menu === 'csv') { DB.updateFicha(ficha.id, collectFormData()).then(() => DB.getFicha(ficha.id)).then(f => exportRadonCsv([f])); }
         if (item.dataset.menu === 'json') exportJSON(ficha.id);
         if (item.dataset.menu === 'delete') deleteFicha(ficha.id, true);
       });
@@ -1377,6 +1388,34 @@
   // =========================================
   // PDF Export
   // =========================================
+  function exportRadonCsv(records) {
+    const columns = [
+      ['Nombres completos','nombresCompletos'], ['Provincia','provincia'], ['Cantón','canton'],
+      ['Parroquia','parroquia'], ['Barrio','barrio'], ['Código de casa','codigoCasa'],
+      ['Número de cuadra','numeroCuadra'], ['Latitud','latitud'], ['Longitud','longitud'],
+      ['Tipo de electreto','tipoElectreto'], ['Código del electreto','codigoElectreto'],
+      ['Fecha inicial','fecha'], ['Fecha final','fechaFin'], ['Hora de inicio','horaInicio'],
+      ['Hora de fin','horaFin'], ['Voltaje inicial [V]','voltajeInicial'], ['Voltaje final [V]','voltajeFinal'],
+    ];
+    const escapeCell = value => {
+      let text = String(value ?? '');
+      if (/^[=+@\t\r]/.test(text) || /^-(?!\d)/.test(text)) text = "'" + text;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const valid = records.filter(f => f && f.tipo === 'radon');
+    const rows = [[...columns.map(([label]) => label), 'Concentración [Bq/m³]'], ...valid.map(f => {
+      const value = RadonCalc.concentration(f.tipoElectreto, f.fecha, f.fechaFin, f.voltajeInicial, f.voltajeFinal);
+      return [...columns.map(([, key]) => f[key] ?? ''), value === null ? '' : {decimalText:value.toFixed(3)}];
+    })];
+    const serialize = value => value && typeof value === 'object' && value.decimalText ? `"\t${value.decimalText}"` : escapeCell(value);
+    const blob = new Blob(['\ufeff' + rows.map(row => row.map(serialize).join(',')).join('\r\n')], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url;
+    const name = valid.length === 1 ? String(valid[0].codigoCasa || valid[0].nombresCompletos || 'Ficha').trim().replace(/[\\/:*?"<>|\s]+/g, '_') : 'Todas';
+    link.download = `Radon_en_Casas_${name}_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   async function exportPDF(id) {
     showToast('Generando PDF...', '', 3000);
     try {
@@ -1395,6 +1434,7 @@
             ['numeroCuadra', 'f-numero-cuadra', 'número de cuadra'],
             ['latitud', 'f-latitud', 'latitud'],
             ['longitud', 'f-longitud', 'longitud'],
+            ['tipoElectreto', 'f-tipo-electreto', 'tipo de electreto'],
             ['codigoElectreto', 'f-codigo-electreto', 'código del electreto'],
             ['fecha', 'f-fecha', 'fecha inicial'],
             ['fechaFin', 'f-fecha-fin', 'fecha final'],

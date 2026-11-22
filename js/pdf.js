@@ -304,6 +304,7 @@ const PDFGen = (() => {
         ? `Número de piso: ${ficha.numeroPisoMedicion || '—'}`
         : selectedLabel('pisoMedicion', ficha.pisoMedicion);
       autoTable([
+        [ labelCell('Tipo de electreto'), { content: ficha.tipoElectreto || '—', colSpan: 3 } ],
         [ labelCell('Código del electreto'), { content: ficha.codigoElectreto || '—', colSpan: 3 } ],
         [ labelCell('Fecha inicial'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha final'), valueCell(formatDate(ficha.fechaFin)) ],
         [ labelCell('Hora de inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora de fin'), valueCell(formatTime(ficha.horaFin)) ],
