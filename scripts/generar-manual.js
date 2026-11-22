@@ -47,7 +47,7 @@ para('Una aplicación para organizar mediciones, fichas y experimentos desde la 
 heading('Cuatro colecciones');
 bullet('Cuevas: ubicación, parámetros ambientales, equipos, observaciones y fotografías.');
 bullet('Radón en Casas: datos de la vivienda y mediciones con electretos.');
-bullet('Experimento Plantas: diseño, seguimiento por semilla y gráficas de mortalidad.');
+bullet('Parámetros de Emergencia: diseño, seguimiento por semilla y gráficas de mortalidad.');
 bullet('Close Chamber: diseño por granulometría y peso, voltajes y concentración de radón.');
 box('Abre la aplicación',['https://jorgeoswaldoc.github.io/offline-pdf-maker/','En el navegador puedes añadir Ficharium a la pantalla de inicio.']);
 page('Primeros pasos','Acceso y navegación');
@@ -57,6 +57,8 @@ heading('Crear y abrir fichas');
 bullet('Elige una colección. Si está vacía, usa el botón para crear la primera ficha; después utiliza el botón +.');
 bullet('Abre una tarjeta para revisar sus datos. La flecha del encabezado vuelve a la colección o al selector.');
 bullet('Las tarjetas ofrecen acciones según el tipo de ficha: editar, exportar y eliminar. La eliminación pide confirmación.');
+heading('Sobre Ficharium');
+para('En el menú de la pantalla principal, Sobre Ficharium abre el manual publicado en GitHub Pages. Esta opción necesita conexión.');
 heading('Datos en el dispositivo');
 para('Las fichas y fotografías se guardan en el navegador. Los datos de cada dispositivo y de cada dirección son independientes: GitHub Pages y un servidor local no comparten automáticamente los registros.');
 box('Antes de limpiar o cambiar de dispositivo',['Exporta un respaldo JSON y comprueba que el archivo se haya guardado. Después impórtalo en la otra instalación.']);
@@ -69,7 +71,7 @@ para('Completa los datos generales y la ubicación. Puedes escribir las coordena
 bullet('En Datos de medición selecciona Short o Long, ingresa el código del electreto, las fechas y los voltajes. La fecha final no puede ser anterior a la inicial y el voltaje final no puede superar al inicial.');
 bullet('Las tarjetas muestran nombre, cuadra, código de casa cuando exista y ubicación. El CSV individual o general incluye los datos generales y de medición, sin espacio ni piso de medición.');
 box('Campos obligatorios',['Los campos marcados con * deben completarse para obtener una ficha completa y exportar el PDF. Los registros antiguos sin tipo de electreto necesitan ese dato para calcular la concentración.']);
-page('Experimento Plantas','Diseño y seguimiento');
+page('Parámetros de Emergencia','Diseño y seguimiento');
 heading('Crear el diseño');
 para('La primera entrada desde un navegador y una dirección solicita el código de acceso. Selecciona Crear experimento y completa identificación, especies, tratamientos, repeticiones, semillas y duración. Revisa el total antes de crear.');
 heading('Registrar observaciones');

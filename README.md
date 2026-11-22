@@ -1,15 +1,16 @@
 # Ficharium
 
-Ficharium es una aplicación web para registrar fichas de Cuevas, Radón en Casas, Experimento Plantas y Close Chamber. Funciona en computadoras y teléfonos; después de cargar sus recursos puede utilizarse sin conexión. Los datos se guardan en el navegador del dispositivo.
+Ficharium es una aplicación web para registrar fichas de Cuevas, Radón en Casas, Parámetros de Emergencia y Close Chamber. Funciona en computadoras y teléfonos; después de cargar sus recursos puede utilizarse sin conexión. Los datos se guardan en el navegador del dispositivo.
 
 **[Abrir Ficharium](https://jorgeoswaldoc.github.io/offline-pdf-maker/)** · **[Descargar el manual de uso (PDF)](Manual-Ficharium.pdf)**
 
 ## Antes de empezar
 
 - Entra desde el enlace anterior. En Android puedes instalarla desde el menú del navegador; en iPhone, abre la página en Safari y selecciona **Compartir → Añadir a pantalla de inicio**.
+- En el menú ☰ de la pantalla principal, **Sobre Ficharium** abre el manual publicado en GitHub Pages; necesita conexión.
 - El almacenamiento pertenece al navegador y a la dirección utilizada. Los registros de GitHub Pages, del servidor local y de otros dispositivos son independientes; no se sincronizan automáticamente.
 - Exporta respaldos JSON antes de cambiar de dispositivo, borrar datos del navegador o limpiar la aplicación. Las fotografías se incluyen en los respaldos de las fichas que las contienen.
-- La sección Experimento Plantas solicita su código una vez por navegador y dirección. Es una barrera de acceso local, no un sistema de cuentas ni de cifrado de los datos.
+- La sección Parámetros de Emergencia solicita su código una vez por navegador y dirección. Es una barrera de acceso local, no un sistema de cuentas ni de cifrado de los datos.
 
 ## Colecciones
 
@@ -23,7 +24,7 @@ Registra los datos generales y la ubicación, las características de la viviend
 
 La tarjeta muestra el nombre, número de cuadra y código de casa si existe, además de provincia, cantón y parroquia. Exporta el PDF o el CSV de una ficha desde su tarjeta o formulario; también puedes descargar un CSV de toda la colección. El CSV contiene los datos generales y de medición, excluyendo el tipo de espacio y el piso de medición.
 
-### Experimento Plantas
+### Parámetros de Emergencia
 
 Después de introducir el código de acceso, crea un diseño con especies, tratamientos, repeticiones, semillas y duración. La aplicación muestra el total de unidades y permite registrar estados por semilla y día. Según los datos disponibles, puedes generar etiquetas, gráficas de mortalidad y exportaciones CSV, Excel, PNG y PDF. El menú permite respaldar cada experimento en JSON. El estado puede marcarse como **Parcial** o **Completado** y volver a cambiarse.
 

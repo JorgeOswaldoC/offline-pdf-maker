@@ -43,7 +43,7 @@ const Experiments = (() => {
 
   function renderAccess(root, { toast, navigate, onUnlock }) {
     root.innerHTML = `<main class="experiment-screen experiment-access-screen"><section class="experiment-access-card">
-      <button class="btn btn-ghost btn-sm experiment-access-back" type="button" data-access-back>← Volver</button><div class="experiment-access-icon" aria-hidden="true">🌱</div><h1>Experimento Plantas</h1>
+      <button class="btn btn-ghost btn-sm experiment-access-back" type="button" data-access-back>← Volver</button><div class="experiment-access-icon" aria-hidden="true">🌱</div><h1>Parámetros de Emergencia</h1>
       <p>Ingresa el código de acceso una vez para habilitar esta sección en este dispositivo.</p>
       <form data-access-form><label for="experiment-access-code">Código de acceso</label><input id="experiment-access-code" name="accessCode" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="6" pattern="[A-Za-z0-9]{6}" required aria-describedby="experiment-access-help"><small id="experiment-access-help">Código de 6 letras o números.</small><button class="btn btn-primary experiment-access-submit" type="submit">Ingresar</button></form>
     </section></main>`;
@@ -70,7 +70,7 @@ const Experiments = (() => {
       <main class="experiment-screen experiment-list-screen">
         <header class="experiment-header">
           <button class="btn-icon collection-back" data-action="back" aria-label="Cambiar tipo de ficha">←</button>
-          <div class="experiment-header-copy"><div class="experiment-title">Experimento Plantas</div><div class="header-subtitle">Emergencia y mortalidad de plántulas</div></div><button class="btn-icon" data-menu aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <div class="experiment-header-copy"><div class="experiment-title">Parámetros de Emergencia</div><div class="header-subtitle">Emergencia y mortalidad de plántulas</div></div><button class="btn-icon" data-menu aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
         <section class="experiment-content">
           ${experiments.length ? `<div class="experiment-list">${experiments.map(renderCard).join('')}</div>` : `

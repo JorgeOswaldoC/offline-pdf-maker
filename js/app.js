@@ -159,7 +159,7 @@
     app.innerHTML = `
       <main class="start-screen">
         <header class="start-topbar">
-          <div class="start-brand"><img class="brand-mark" src="icons/icon-ficharium.png" alt=""><span>Ficharium</span></div>
+          <div class="start-brand">FICHARIUM</div>
           <button class="btn-icon" id="start-menu-btn" aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
         <section class="start-intro"><svg class="start-intro-logo" viewBox="0 0 120 110" role="img" aria-label="Logo de Ficharium"><rect x="36" y="8" width="66" height="70" rx="3" fill="#f7f0e2"/><rect x="29" y="15" width="66" height="70" rx="3" fill="#e7e0d6"/><rect x="22" y="22" width="66" height="70" rx="3" fill="#f7f0e2"/><path d="M17 42h27l8 9h52c5 0 8 3 8 8v33c0 6-3 9-9 9H17c-6 0-9-3-9-9V51c0-6 3-9 9-9Z" fill="#00b69e"/><rect x="15" y="47" width="22" height="7" rx="3" fill="#ff8626"/><path d="M80 25h6v6h-6z" fill="#ff8626"/><path d="M80 31h6v6h-6z" fill="#ffca2c"/><path d="M80 37h6v6h-6z" fill="#83b82e"/><path d="M80 43h6v6h-6z" fill="#4ba8d6"/></svg><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo.</p></section>
@@ -174,7 +174,7 @@
           </button>
           <button class="type-card experiment-launch-card" data-experiments>
             <span class="type-art experiment-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M50 68V39"/><path d="M50 51C27 51 18 39 20 17c21-2 34 8 30 34Z"/><path d="M50 58c2-19 14-28 31-26 0 18-9 28-31 30Z"/><path d="M28 24c8 8 14 16 20 27M73 38c-9 5-16 12-22 22"/></svg></span>
-            <span class="type-name">Experimento Plantas</span><span class="type-copy">Diseño y registro de emergencia y supervivencia de semillas.</span><span class="type-action">Abrir fichas</span>
+            <span class="type-name">Parámetros de Emergencia</span><span class="type-copy">Diseño y registro de emergencia y supervivencia de semillas.</span><span class="type-action">Abrir fichas</span>
           </button>
           <button class="type-card chamber-launch-card" data-chamber>
             <span class="type-art chamber-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M31 17h38v8H31zM35 25v43q0 5 5 5h20q5 0 5-5V25M34 13h32v4H34M50 25v10M43 35h14v18H43zM46 39h8M39 62h22"/></svg></span>
@@ -319,19 +319,20 @@
     menu.className = 'menu-dropdown';
     menu.style.cssText = `top:${rect.bottom + 4}px; right:${document.documentElement.clientWidth - rect.right}px`;
     const installedAlready = isInStandaloneMode();
-    const labels = {radon:'Radón en Casas', cave:'Cuevas', plants:'Experimento Plantas', 'close-chamber':'Close Chamber'};
+    const labels = {radon:'Radón en Casas', cave:'Cuevas', plants:'Parámetros de Emergencia', 'close-chamber':'Close Chamber'};
     const exportOptions = type
       ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${labels[type]} (JSON)</button>`
       : `<button class="menu-item" data-menu="export-all">💾 Exportar todas las fichas (JSON)</button>
          <button class="menu-item" data-menu="export-cave">🗺️ Exportar fichas de Cuevas</button>
          <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón en Casas</button>
-         <button class="menu-item" data-menu="export-plants">🌱 Exportar fichas de Experimento Plantas</button>
+         <button class="menu-item" data-menu="export-plants">🌱 Exportar fichas de Parámetros de Emergencia</button>
          <button class="menu-item" data-menu="export-chamber"><svg class="chamber-menu-icon" viewBox="0 0 100 90" aria-hidden="true"><path d="M45 18a5 5 0 0 1 10 0M40 18h20v13H40z"/><path d="M40 30c-15 4-24 15-24 27v14c0 9 15 14 34 14s34-5 34-14V57c0-12-9-23-24-27"/><path class="chamber-label" d="M17 58h66v15H17z"/><path d="M20 76c8 4 18 6 30 6s22-2 30-6"/></svg> Exportar fichas de Close Chamber</button>`;
     menu.innerHTML = `
       <button class="menu-item" data-menu="import">📂 Importar fichas (JSON)</button>
       <div class="divider"></div>
       ${exportOptions}
       <div class="divider"></div>
+      ${!type ? `<a class="menu-item" data-about href="https://jorgeoswaldoc.github.io/offline-pdf-maker/Manual-Ficharium.pdf?v=${Date.now()}" target="_blank" rel="noopener noreferrer">📖 Sobre Ficharium</a><div class="divider"></div>` : ''}
       ${!type ? (installedAlready
         ? `<button class="menu-item" data-menu="install" disabled style="opacity:.4;cursor:default">📲 App ya instalada</button>`
         : `<button class="menu-item" data-menu="install">📲 Instalar app</button>`) + '<div class="divider"></div>' : ''}
@@ -348,6 +349,7 @@
     currentMenuCleanup = cleanup;
 
     overlay.addEventListener('click', cleanup);
+    menu.querySelector('[data-about]')?.addEventListener('click', () => setTimeout(cleanup, 0));
     menu.querySelectorAll('[data-menu]').forEach(item => {
       item.addEventListener('click', () => {
         if (item.disabled) return;
@@ -1596,7 +1598,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const names = {radon:'Radon', cave:'Cuevas', plants:'Experimento_Plantas', 'close-chamber':'Close_Chamber'};
+    const names = {radon:'Radon', cave:'Cuevas', plants:'Parametros_de_Emergencia', 'close-chamber':'Close_Chamber'};
     a.download = `Fichas_${names[type] || 'Medicion'}_${new Date().toISOString().substring(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
