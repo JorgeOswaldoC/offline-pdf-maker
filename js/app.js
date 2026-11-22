@@ -111,7 +111,9 @@
 
   function navigate(path, params = {}) {
     const q = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-    location.hash = q ? `${path}?${q}` : path;
+    const target = q ? `${path}?${q}` : path;
+    if (location.hash.slice(1) === target) render().catch(showStartupError);
+    else location.hash = target;
   }
 
   window.addEventListener('hashchange', () => {
@@ -134,8 +136,12 @@
       await renderHome(params.type || params.tipo || 'cave');
     } else if (path === 'start') {
       renderStart();
+    } else if (path === 'close-chamber') {
+      await CloseChamber.list(document.getElementById('app'), { navigate, toast: showToast, confirm, showMenu: showHomeMenu });
+    } else if (path === 'close-chamber-detail') {
+      await CloseChamber.detail(document.getElementById('app'), params.id, { navigate, toast: showToast, confirm, showMenu: showHomeMenu });
     } else if (path === 'experiments') {
-      await Experiments.render(document.getElementById('app'), { navigate, toast: showToast, confirm });
+      await Experiments.render(document.getElementById('app'), { navigate, toast: showToast, confirm, showMenu: showHomeMenu });
     } else if (path === 'experiment') {
       await Experiments.renderDetail(document.getElementById('app'), params.id, { navigate, toast: showToast, confirm });
     } else if (path === 'experiment-matrix') {
@@ -154,27 +160,32 @@
       <main class="start-screen">
         <header class="start-topbar">
           <div class="start-brand"><img class="brand-mark" src="icons/icon-ficharium.png" alt=""><span>Ficharium</span></div>
-          <button class="btn-icon" id="start-menu-btn" aria-label="Menú" title="Más opciones">⋮</button>
+          <button class="btn-icon" id="start-menu-btn" aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
-        <section class="start-intro"><p class="eyebrow">HERRAMIENTA DE MEDICIÓN</p><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo de campo.</p></section>
+        <section class="start-intro"><h1>¿Qué vas a registrar?</h1><p>Elige el tipo de ficha para empezar tu trabajo de campo.</p></section>
         <section class="type-grid" aria-label="Tipo de ficha">
           <button class="type-card cave-card" data-type="cave">
             <span class="type-art cave-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M8 72 Q18 50 26 36 Q34 19 50 12 Q66 19 74 36 Q82 50 92 72Z"/><path d="M34 72 Q38 54 50 43 Q62 54 66 72Z"/><path d="M18 56 Q33 47 50 49 Q67 47 82 56"/></svg></span>
             <span class="type-name">Cuevas</span><span class="type-copy">Exploración y mediciones subterráneas</span><span class="type-action">Abrir fichas</span>
           </button>
           <button class="type-card radon-card" data-type="radon">
-            <span class="type-art radon-art" aria-hidden="true"><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="8"/><path d="M46 30 34 10Q28 7 24 13L37 35M58 37 82 35Q87 39 83 45L59 45M43 47 34 69Q37 75 44 73L51 50"/><circle cx="50" cy="40" r="30"/></svg></span>
-            <span class="type-name">Radón en casas</span><span class="type-copy">Registro de sitios y medición de radón</span><span class="type-action">Abrir fichas</span>
+            <span class="type-art radon-art" aria-hidden="true"><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="4.5"/><path d="M46 31 37 15 A28 28 0 0 1 63 15 L54 31 A10 10 0 0 0 46 31Z"/><path d="M46 31 37 15 A28 28 0 0 1 63 15 L54 31 A10 10 0 0 0 46 31Z" transform="rotate(120 50 40)"/><path d="M46 31 37 15 A28 28 0 0 1 63 15 L54 31 A10 10 0 0 0 46 31Z" transform="rotate(240 50 40)"/><circle cx="50" cy="40" r="34"/></svg></span>
+            <span class="type-name">Radón en Casas</span><span class="type-copy">Registro de sitios y medición de radón</span><span class="type-action">Abrir fichas</span>
           </button>
           <button class="type-card experiment-launch-card" data-experiments>
             <span class="type-art experiment-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M50 68V39"/><path d="M50 51C27 51 18 39 20 17c21-2 34 8 30 34Z"/><path d="M50 58c2-19 14-28 31-26 0 18-9 28-31 30Z"/><path d="M28 24c8 8 14 16 20 27M73 38c-9 5-16 12-22 22"/></svg></span>
             <span class="type-name">Experimento Plantas</span><span class="type-copy">Diseño y registro de emergencia y supervivencia de semillas.</span><span class="type-action">Abrir fichas</span>
+          </button>
+          <button class="type-card chamber-launch-card" data-chamber>
+            <span class="type-art chamber-art" aria-hidden="true"><svg viewBox="0 0 100 80"><path d="M31 17h38v8H31zM35 25v43q0 5 5 5h20q5 0 5-5V25M34 13h32v4H34M50 25v10M43 35h14v18H43zM46 39h8M39 62h22"/></svg></span>
+            <span class="type-name">Close Chamber</span><span class="type-copy">Diseño y medición de radón en materiales.</span><span class="type-action">Abrir fichas</span>
           </button>
         </section>
         <p class="start-footnote">Tus registros se guardan en este dispositivo.</p>
       </main>`;
     $$('.type-card[data-type]').forEach(card => card.addEventListener('click', () => navigate('home', { type: card.dataset.type })));
     $('[data-experiments]').addEventListener('click', () => navigate('experiments'));
+    $('[data-chamber]').addEventListener('click', () => navigate('close-chamber'));
     $('#start-menu-btn').addEventListener('click', (e) => showHomeMenu(e));
   }
 
@@ -192,28 +203,25 @@
     app.innerHTML = `
       <div class="home-screen">
         <header class="app-header">
+          <button class="btn-icon collection-back" id="collection-switch" aria-label="Cambiar tipo de ficha" title="Cambiar tipo de ficha">←</button>
           <div class="header-title">
-            Fichas de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'}
+            Fichas de ${type === 'radon' ? 'Radón en Casas' : 'Cuevas'}
             <div class="header-subtitle">App de campo — ${type === 'radon' ? 'medición de radón en casas' : 'exploración subterránea'}</div>
           </div>
-          <div class="header-status">
-            <div class="status-dot" id="status-dot"></div>
-            <span id="status-text">Online</span>
-          </div>
-          <button class="btn-icon" id="home-menu-btn" aria-label="Menú" title="Más opciones">⋮</button>
+          <button class="btn-icon" id="home-menu-btn" aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
 
         <main class="home-content">
-          <button class="collection-switch" id="collection-switch">← Cambiar tipo de ficha</button>
           ${fichas.length === 0 ? renderEmptyState(type) : renderFichaList(fichas, type)}
         </main>
 
-        <button class="fab" id="new-ficha-btn" title="Nueva Ficha">+</button>
+        ${fichas.length ? '<button class="fab" id="new-ficha-btn" title="Nueva ficha" aria-label="Nueva ficha">+</button>' : ''}
       </div>`;
 
     updateOnlineStatus();
 
-    $('#new-ficha-btn').addEventListener('click', () => navigate('form', { id: 'new', type }));
+    $('#new-ficha-btn')?.addEventListener('click', () => navigate('form', { id: 'new', type }));
+    $('#empty-new-ficha')?.addEventListener('click', () => navigate('form', { id: 'new', type }));
     $('#home-menu-btn').addEventListener('click', (e) => showHomeMenu(e, type));
     $('#collection-switch').addEventListener('click', () => navigate('start'));
 
@@ -240,7 +248,8 @@
       <div class="empty-state">
         <div class="empty-icon">${type === 'radon' ? '☢️' : '🗺️'}</div>
         <div class="empty-title">Sin fichas aún</div>
-        <div class="empty-subtitle">Toca + para crear tu primera ficha de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'}</div>
+        <div class="empty-subtitle">Crea tu primera ficha de ${type === 'radon' ? 'Radón en Casas' : 'Cuevas'}.</div>
+        <button class="btn btn-primary" id="empty-new-ficha">Crear ficha</button>
       </div>`;
   }
 
@@ -262,9 +271,10 @@
         <div class="ficha-card-main" data-id="${f.id}" role="button" tabindex="0">
           <div class="ficha-card-header">
             <div class="ficha-card-info">
-              <div class="ficha-cueva">${esc(type === 'radon' ? (f.codigoCasa || f.nombresCompletos || '(Sin identificar)') : (f.cueva || '(Sin nombre)'))}</div>
+              <div class="experiment-local-status">● Solo en este dispositivo</div>
+              <div class="ficha-cueva ${type === 'radon' ? 'ficha-radon-title' : ''}">${type === 'radon' ? esc([f.nombresCompletos, f.numeroCuadra, f.codigoCasa].map(value => String(value || '').trim()).filter(Boolean).join(' - ') || '(Sin identificar)') : esc(f.cueva || '(Sin nombre)')}</div>
               <div class="ficha-meta">
-                ${type === 'radon' ? [f.provincia, f.canton, f.parroquia].filter(Boolean).map(v => `<span class="ficha-meta-item">📍 ${esc(v)}</span>`).join('') : (f.punto ? `<span class="ficha-meta-item">📍 ${esc(f.punto)}</span>` : '')}
+                ${type === 'radon' ? [['Provincia', f.provincia], ['Cantón', f.canton], ['Parroquia', f.parroquia]].map(([label, value]) => `<span class="ficha-meta-item">${label}: ${esc(value || 'Sin registrar')}</span>`).join('') : (f.punto ? `<span class="ficha-meta-item">📍 ${esc(f.punto)}</span>` : '')}
                 <span class="ficha-meta-item">📅 ${dateStr}</span>
                 <span class="ficha-meta-item">✏️ ${updStr}</span>
               </div>
@@ -303,20 +313,22 @@
     menu.className = 'menu-dropdown';
     menu.style.cssText = `top:${rect.bottom + 4}px; right:${document.documentElement.clientWidth - rect.right}px`;
     const installedAlready = isInStandaloneMode();
+    const labels = {radon:'Radón en Casas', cave:'Cuevas', plants:'Experimento Plantas', 'close-chamber':'Close Chamber'};
     const exportOptions = type
-      ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${type === 'radon' ? 'Radón en casas' : 'Cuevas'} (JSON)</button>`
+      ? `<button class="menu-item" data-menu="export-all">💾 Exportar fichas de ${labels[type]} (JSON)</button>`
       : `<button class="menu-item" data-menu="export-all">💾 Exportar todas las fichas (JSON)</button>
          <button class="menu-item" data-menu="export-cave">🗺️ Exportar fichas de Cuevas</button>
-         <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón en casas</button>`;
+         <button class="menu-item" data-menu="export-radon">☢️ Exportar fichas de Radón en Casas</button>
+         <button class="menu-item" data-menu="export-plants">🌱 Exportar fichas de Experimento Plantas</button>
+         <button class="menu-item" data-menu="export-chamber"><svg class="chamber-menu-icon" viewBox="0 0 100 90" aria-hidden="true"><path d="M45 18a5 5 0 0 1 10 0M40 18h20v13H40z"/><path d="M40 30c-15 4-24 15-24 27v14c0 9 15 14 34 14s34-5 34-14V57c0-12-9-23-24-27"/><path class="chamber-label" d="M17 58h66v15H17z"/><path d="M20 76c8 4 18 6 30 6s22-2 30-6"/></svg> Exportar fichas de Close Chamber</button>`;
     menu.innerHTML = `
       <button class="menu-item" data-menu="import">📂 Importar fichas (JSON)</button>
       <div class="divider"></div>
       ${exportOptions}
       <div class="divider"></div>
-      ${installedAlready
+      ${!type ? (installedAlready
         ? `<button class="menu-item" data-menu="install" disabled style="opacity:.4;cursor:default">📲 App ya instalada</button>`
-        : `<button class="menu-item" data-menu="install">📲 Instalar app</button>`}
-      <div class="divider"></div>
+        : `<button class="menu-item" data-menu="install">📲 Instalar app</button>`) + '<div class="divider"></div>' : ''}
       <button class="menu-item danger" data-menu="clear">🗑️ Limpiar caché y datos</button>`;
 
     document.body.appendChild(overlay);
@@ -338,6 +350,8 @@
         if (item.dataset.menu === 'export-all') exportAllJSON(type);
         if (item.dataset.menu === 'export-cave') exportAllJSON('cave');
         if (item.dataset.menu === 'export-radon') exportAllJSON('radon');
+        if (item.dataset.menu === 'export-plants') exportAllJSON('plants');
+        if (item.dataset.menu === 'export-chamber') exportAllJSON('close-chamber');
         if (item.dataset.menu === 'install') triggerInstall();
         if (item.dataset.menu === 'clear') showClearDialog();
       });
@@ -409,7 +423,7 @@
     if (id === 'new') {
       ficha = {
         tipo: requestedType,
-        id: crypto.randomUUID(),
+        id: DB.newId(),
         cueva: '', punto: '', sitio: '', nombresCompletos: '', provincia: '', canton: '', parroquia: '', barrio: '', codigoCasa: '', numeroCuadra: '', latitud: '', longitud: '',
         tipologiaConstruccion: '', tipologiaConstruccionOtro: '', posicionPisoBajo: '', posicionPisoBajoOtro: '', usoSotano: '', usoSotanoOtro: '',
         anoConstruccion: '', tiposTerreno: [], materialesConstruccion: [], climatizacion: [], humedadParedes: null, grietasParedes: null,
@@ -441,10 +455,10 @@
         <header class="app-header">
           <button class="header-back" id="back-btn" title="Volver">←</button>
           <div class="header-title">
-            ${esc(type === 'radon' ? (ficha.codigoCasa || ficha.nombresCompletos || 'Nueva ficha de Radón en casas') : (ficha.cueva || 'Nueva Ficha'))}
+            ${esc(type === 'radon' ? (ficha.codigoCasa || ficha.nombresCompletos || 'Nueva ficha de Radón en Casas') : (ficha.cueva || 'Nueva Ficha'))}
             <div class="header-subtitle" id="save-status-header">Auto-guardado</div>
           </div>
-          <button class="btn-icon" id="form-menu-btn" aria-label="Más opciones">⋮</button>
+          <button class="btn-icon" id="form-menu-btn" aria-label="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
 
         <main class="form-content" id="form-content">
@@ -1338,6 +1352,7 @@
       // Delete all fichas (and their photos, via DB.deleteFicha cascade)
       const fichas = await DB.getAllFichas();
       for (const f of fichas) await DB.deleteFicha(f.id);
+      for (const experiment of await DB.getAllExperiments()) await DB.deleteExperiment(experiment.id);
 
       // Clear service worker caches
       if ('caches' in window) {
@@ -1352,9 +1367,7 @@
       }
 
       showToast('Datos y caché eliminados', 'success');
-      const { params } = getRoute();
-      if (getRoute().path === 'start') renderStart();
-      else await renderHome(params.type || 'cave');
+      await render();
     } catch (err) {
       console.error(err);
       showToast('Error al limpiar', 'error');
@@ -1536,16 +1549,18 @@
       return { ficha: f, fotos: fotosExport };
     }));
 
-    const exportData = { fichas: allData, exportedAt: new Date().toISOString(), version: 2 };
+    const experiments = !type || type === 'plants' ? await DB.getAllExperiments() : [];
+    const exportData = { fichas: allData, experiments, exportedAt: new Date().toISOString(), version: 2 };
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Fichas_${type === 'radon' ? 'Radon' : type === 'cave' ? 'Cuevas' : 'Medicion'}_${new Date().toISOString().substring(0,10)}.json`;
+    const names = {radon:'Radon', cave:'Cuevas', plants:'Experimento_Plantas', 'close-chamber':'Close_Chamber'};
+    a.download = `Fichas_${names[type] || 'Medicion'}_${new Date().toISOString().substring(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`${fichas.length} fichas exportadas`, 'success');
+    showToast(`${fichas.length + experiments.length} fichas exportadas`, 'success');
   }
 
   function triggerImport(type) {
@@ -1568,7 +1583,7 @@
 
   async function importJSON(data, currentType = 'cave') {
     let imported = 0;
-    const items = data.fichas || [{ ficha: data.ficha, fotos: data.fotos }];
+    const items = data.fichas || (data.ficha ? [{ ficha: data.ficha, fotos: data.fotos }] : []);
 
     for (const item of items) {
       const { ficha: rawFicha, fotos = [] } = item;
@@ -1589,9 +1604,16 @@
       imported++;
     }
 
+    const experiments = data.experiments || (data.format === 'ficharium-experiment-backup' && data.experiment ? [data.experiment] : []);
+    for (const experiment of experiments) {
+      if (!experiment?.id || !experiment.design?.species || !experiment.code) continue;
+      if (await DB.getExperiment(experiment.id)) await DB.updateExperiment(experiment.id, experiment);
+      else await DB.createExperiment(experiment);
+      imported++;
+    }
+
     showToast(`${imported} ficha(s) importada(s)`, 'success');
-    if (currentType) await renderHome(currentType);
-    else renderStart();
+    await render();
   }
 
   function blobToBase64(blob) {

@@ -7,6 +7,13 @@ const DB = (() => {
   const DB_VERSION = 2;
   let db = null;
 
+  function newId() {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    return [...bytes].map((v, i) => (i === 4 || i === 6 || i === 8 || i === 10 ? '-' : '') + v.toString(16).padStart(2, '0')).join('');
+  }
+
   function open() {
     return new Promise((resolve, reject) => {
       if (db) return resolve(db);
@@ -60,7 +67,7 @@ const DB = (() => {
     await open();
     const now = new Date().toISOString();
     const ficha = {
-      id: data.id || crypto.randomUUID(),
+      id: data.id || newId(),
       createdAt: now,
       updatedAt: now,
       ...data,
@@ -128,7 +135,7 @@ const DB = (() => {
   async function createExperiment(data) {
     await open();
     const now = new Date().toISOString();
-    const experiment = { id: data.id || crypto.randomUUID(), createdAt: now, updatedAt: now, ...data };
+    const experiment = { id: data.id || newId(), createdAt: now, updatedAt: now, ...data };
     await promisify(tx('experiments', 'readwrite').add(experiment));
     return experiment;
   }
@@ -153,6 +160,11 @@ const DB = (() => {
     return promisify(tx('experiments').getAll());
   }
 
+  async function deleteExperiment(id) {
+    await open();
+    await promisify(tx('experiments', 'readwrite').delete(id));
+  }
+
   return { createFicha, getFicha, updateFicha, deleteFicha, getAllFichas, addFoto, getFotos, deleteFoto, deleteAllFotos,
-    createExperiment, getExperiment, updateExperiment, getAllExperiments };
+    createExperiment, getExperiment, updateExperiment, getAllExperiments, deleteExperiment, newId };
 })();

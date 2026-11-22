@@ -64,34 +64,34 @@ const Experiments = (() => {
     });
   }
 
-  async function render(root, { navigate, toast, confirm }) {
+  async function render(root, { navigate, toast, confirm, showMenu }) {
     const experiments = (await DB.getAllExperiments()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     root.innerHTML = `
       <main class="experiment-screen experiment-list-screen">
         <header class="experiment-header">
-          <button class="btn-icon" data-action="back" aria-label="Volver">←</button>
-          <div><div class="experiment-title">Experimento Plantas</div><div class="header-subtitle">Emergencia y mortalidad de plántulas</div></div>
+          <button class="btn-icon collection-back" data-action="back" aria-label="Cambiar tipo de ficha">←</button>
+          <div class="experiment-header-copy"><div class="experiment-title">Experimento Plantas</div><div class="header-subtitle">Emergencia y mortalidad de plántulas</div></div><button class="btn-icon" data-menu aria-label="Menú" title="Más opciones"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         </header>
         <section class="experiment-content">
           ${experiments.length ? `<div class="experiment-list">${experiments.map(renderCard).join('')}</div>` : `
             <div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Todavía no hay experimentos</div><div class="empty-subtitle">Crea un diseño para empezar a registrar semillas.</div><button class="btn btn-primary" data-action="new">Crear experimento</button></div>`}
         </section>
-        <button class="fab experiment-add-button" type="button" data-action="new" aria-label="Crear experimento" title="Crear experimento">+</button>
+        ${experiments.length ? '<button class="fab experiment-add-button" type="button" data-action="new" aria-label="Crear experimento" title="Crear experimento">+</button>' : ''}
       </main>`;
     root.querySelectorAll('[data-action="back"]').forEach((button) => button.addEventListener('click', () => navigate('start')));
-    root.querySelectorAll('[data-action="new"]').forEach((button) => button.addEventListener('click', () => renderCreate(root, { navigate, toast, confirm })));
+    root.querySelector('[data-menu]').addEventListener('click', e => showMenu(e, 'plants'));
+    root.querySelectorAll('[data-action="new"]').forEach((button) => button.addEventListener('click', () => renderCreate(root, { navigate, toast, confirm, showMenu })));
     root.querySelectorAll('[data-open-experiment]').forEach((button) => button.addEventListener('click', () => navigate('experiment', { id: button.dataset.openExperiment })));
     root.querySelectorAll('[data-export-experiment]').forEach((button) => button.addEventListener('click', async () => {
       const record = await DB.getExperiment(button.dataset.exportExperiment);
       if (record) exportExperimentCsv(record);
     }));
-    root.querySelectorAll('[data-archive-experiment]').forEach((button) => button.addEventListener('click', async () => {
-      const record = await DB.getExperiment(button.dataset.archiveExperiment);
-      if (!record || !await confirm('Archivar experimento', `Se conservarán los datos de <strong>${escapeHtml(record.code)}</strong>.`)) return;
-      record.archived = true;
-      await DB.updateExperiment(record.id, record);
-      toast('Experimento archivado');
-      await render(root, { navigate, toast, confirm });
+    root.querySelectorAll('[data-edit-experiment]').forEach(button => button.addEventListener('click', async () => { const record = await DB.getExperiment(button.dataset.editExperiment); if (record) renderCreate(root, {navigate, toast, confirm, existing:record}); }));
+    root.querySelectorAll('[data-json-experiment]').forEach(button => button.addEventListener('click', async () => { const record = await DB.getExperiment(button.dataset.jsonExperiment); if (record) exportExperimentJson(record); }));
+    root.querySelectorAll('[data-delete-experiment]').forEach(button => button.addEventListener('click', async () => {
+      const record = await DB.getExperiment(button.dataset.deleteExperiment);
+      if (!record || !await confirm('Eliminar experimento', `Se eliminará <strong>${escapeHtml(record.name)}</strong> y todos sus registros.`)) return;
+      await DB.deleteExperiment(record.id); toast('Experimento eliminado', 'success'); await render(root, {navigate, toast, confirm, showMenu});
     }));
   }
 
@@ -99,18 +99,18 @@ const Experiments = (() => {
     const total = experiment.design.totalSeeds;
     const speciesNames = experiment.design.species.map((species) => species.abbreviation).join(', ');
     const progress = countStatuses(experiment).emergio;
-    return `<article class="experiment-card ${experiment.archived ? 'is-archived' : ''}">
-      <button class="experiment-card-main" data-open-experiment="${escapeHtml(experiment.id)}">
+    return `<article class="ficha-card">
+      <button class="experiment-card-main ficha-card-main" data-open-experiment="${escapeHtml(experiment.id)}">
         <span class="experiment-card-top"><span class="experiment-code">${escapeHtml(experiment.code)}</span><span class="experiment-local-status">● Solo en este dispositivo</span></span>
-        <span class="experiment-card-name">${escapeHtml(experiment.name)}</span>
+        <span class="experiment-card-top"><span class="experiment-card-name">${escapeHtml(experiment.name)}</span><span class="ficha-badge ${experiment.isCompleted ? 'complete' : 'partial'}">${experiment.isCompleted ? '✓ Completado' : '⏳ Parcial'}</span></span>
         <span class="experiment-card-meta">${speciesNames} · ${total} semillas · ${localDate(experiment.design.startDate)}–${localDate(experiment.design.endDate)}</span>
-        <span class="experiment-card-meta">${experiment.archived ? 'Archivado' : `${progress} emergidas`} · Actualizado ${new Date(experiment.updatedAt).toLocaleDateString('es-EC')}</span>
+        <span class="experiment-card-meta">${progress} emergidas · Actualizado ${new Date(experiment.updatedAt).toLocaleDateString('es-EC')}</span>
       </button>
-      <div class="experiment-card-actions"><button class="btn btn-ghost btn-sm" data-export-experiment="${escapeHtml(experiment.id)}">Exportar CSV</button>${experiment.archived ? '' : `<button class="btn btn-ghost btn-sm" data-archive-experiment="${escapeHtml(experiment.id)}">Archivar</button>`}</div>
+      <div class="ficha-card-actions"><button class="ficha-action-btn" data-edit-experiment="${escapeHtml(experiment.id)}">✏️ Editar</button><button class="ficha-action-btn" data-json-experiment="${escapeHtml(experiment.id)}">💾 JSON</button><button class="ficha-action-btn" data-export-experiment="${escapeHtml(experiment.id)}">📄 CSV</button><button class="ficha-action-btn danger" data-delete-experiment="${escapeHtml(experiment.id)}" aria-label="Eliminar experimento">🗑️</button></div>
     </article>`;
   }
 
-  function renderCreate(root, { navigate, toast, confirm, existing = null }) {
+  function renderCreate(root, { navigate, toast, confirm, showMenu, existing = null }) {
     const editing = Boolean(existing);
     root.innerHTML = `
       <main class="experiment-screen">
@@ -134,8 +134,10 @@ const Experiments = (() => {
             </div>
             <label class="experiment-control"><input name="hasControl" type="checkbox" checked> Incluir grupo control T0 con igual número de repeticiones y semillas</label>
           </section>
-          <section class="experiment-panel"><h2>Duración</h2>
-            <div class="experiment-field-row"><label class="experiment-field"><span>Fecha inicial</span><input name="startDate" type="date" required></label><label class="experiment-field"><span>Duración (días)</span><input name="durationDays" type="number" min="1" max="3650" value="30" required></label></div>
+          <section class="experiment-panel experiment-duration"><h2>Duración</h2>
+            <label class="experiment-field"><span>Fecha inicial</span><input name="startDate" type="date" required></label>
+            <label class="experiment-field"><span>Duración (días)</span><input name="durationDays" type="number" min="1" max="3650" value="30" required></label>
+            <label class="experiment-field"><span>Fecha de finalización</span><input name="calculatedEndDate" type="date" readonly></label>
           </section>
           <section class="experiment-review" id="experiment-design-review" aria-live="polite"></section>
           <button class="btn btn-primary btn-full btn-lg" type="submit">${editing ? 'Guardar cambios' : 'Crear experimento'}</button>
@@ -179,7 +181,9 @@ const Experiments = (() => {
       const config = getDesignForm();
       const controls = config.hasControl ? 1 : 0;
       const totalSeeds = config.speciesCount * (config.treatmentCount + controls) * config.replicates * config.seedsPerReplicate;
-      const endDate = dateAfter(config.startDate, config.durationDays);
+      const endDate = form.elements.durationDays.validity.valid && form.elements.durationDays.value
+        ? dateAfter(config.startDate, config.durationDays) : '';
+      form.elements.calculatedEndDate.value = endDate;
       review.innerHTML = `<h2>Revisión del diseño</h2><p><strong>Fecha final:</strong> ${endDate ? localDate(endDate) : 'Selecciona fecha inicial y duración'}</p><p><strong>Total de semillas:</strong> ${Number.isFinite(totalSeeds) ? totalSeeds.toLocaleString('es-EC') : '—'}</p><p>${config.speciesCount} ${config.speciesCount === 1 ? 'especie' : 'especies'} × ${config.treatmentCount + controls} tratamiento(s) × ${config.replicates} repetición(es) × ${config.seedsPerReplicate} semilla(s)</p><p class="experiment-review-species">${readDynamic(speciesFields).map((species) => escapeHtml(species.name || 'Especie sin nombre')).join(' · ')}</p>`;
       review.classList.toggle('has-error', totalSeeds > 10000);
       form.querySelector('[type="submit"]').disabled = totalSeeds > 10000;
@@ -224,7 +228,7 @@ const Experiments = (() => {
     root.querySelectorAll('[data-cancel]').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault();
       if (existing) renderDetail(root, existing.id, { navigate, toast, confirm });
-      else render(root, { navigate, toast, confirm });
+      else render(root, { navigate, toast, confirm, showMenu });
     }));
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -285,7 +289,7 @@ const Experiments = (() => {
 
   function makeSample(speciesCode, treatment, speciesName, repetition, unit) {
     return {
-      uuid: crypto.randomUUID(),
+      uuid: DB.newId(),
       id: `${speciesCode}-${treatment.code}-R${repetition}-U${unit}`,
       species: speciesName, speciesCode, treatment: treatment.name, treatmentCode: treatment.code,
       repetition, unit, values: [],
@@ -391,12 +395,11 @@ const Experiments = (() => {
     root.innerHTML = `
       <main class="experiment-screen"><header class="experiment-header"><button class="btn-icon" data-back aria-label="Volver">←</button><div class="experiment-header-copy"><div class="experiment-title">${escapeHtml(experiment.code)}</div><div class="header-subtitle">${escapeHtml(experiment.name)}</div></div>
         <details class="experiment-actions-menu"><summary aria-label="Abrir menú de acciones" title="Acciones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary><div class="experiment-actions-panel">
-          ${experiment.archived ? '' : '<button type="button" data-edit>Editar diseño</button>'}
+          <button type="button" data-edit>Editar diseño</button>
           <button type="button" data-export>Exportar CSV completo</button>
           <button type="button" data-export-xlsx>Generar Excel</button>
           <button type="button" data-export-json>Respaldar experimento (JSON)</button>
           <button type="button" data-export-labels>Generar PDF de códigos individuales</button>
-          ${experiment.archived ? '' : '<button type="button" data-archive>Archivar experimento</button>'}
         </div></details>
       </header>
         <section class="experiment-content">
@@ -405,8 +408,14 @@ const Experiments = (() => {
             <p>${experiment.design.species.length} ${experiment.design.species.length === 1 ? 'especie' : 'especies'} · ${experiment.design.totalSeeds.toLocaleString('es-EC')} semillas · ${experiment.design.hasControl ? 'Incluye control' : 'Sin control'}</p>
           </div>
       ${experiment.design.species.map((species) => `<section class="experiment-species-panel"><h2>${escapeHtml(species.name)} <small>(${escapeHtml(species.abbreviation)})</small></h2><div class="experiment-treatment-list">${species.treatments.map((treatment) => `<button class="experiment-treatment" data-matrix="${escapeHtml(species.abbreviation)}|${escapeHtml(treatment.code)}"><strong>${canonicalTreatmentCode(treatment, treatmentPosition(species, treatment))} · ${escapeHtml(treatment.name)}</strong><span>${treatment.samples.length} semillas · ${treatment.repetitions} repeticiones</span><span class="experiment-treatment-count">${countTreatment(treatment).emergio} emergidas</span></button>`).join('')}</div>${speciesHasRecordedData(species) ? `<button class="btn btn-primary btn-sm experiment-feature-action experiment-mortality-trigger" data-mortality="${escapeHtml(species.abbreviation)}">Generar gráfica</button>` : ''}</section>`).join('')}
+          <button type="button" class="btn ${experiment.isCompleted ? 'btn-ghost' : 'btn-success'} btn-full experiment-completion" data-completion>${experiment.isCompleted ? 'Marcar como parcial' : 'Marcar experimento como completado'}</button>
         </section></main>`;
     root.querySelector('[data-back]').addEventListener('click', () => navigate('experiments'));
+    root.querySelector('[data-completion]').addEventListener('click', async () => {
+      await DB.updateExperiment(id, {isCompleted: !experiment.isCompleted});
+      toast(experiment.isCompleted ? 'Experimento marcado como parcial' : 'Experimento completado', 'success');
+      await renderDetail(root, id, {navigate, toast, confirm});
+    });
     root.querySelectorAll('[data-matrix]').forEach((button) => button.addEventListener('click', () => {
       const [species, treatment] = button.dataset.matrix.split('|');
       navigate('experiment-matrix', { id, species, treatment });
@@ -426,14 +435,6 @@ const Experiments = (() => {
       catch (error) { console.error(error); toast('No se pudo generar el PDF de códigos', 'error'); }
     });
     root.querySelector('[data-edit]')?.addEventListener('click', () => { actionsMenu.open = false; renderCreate(root, { navigate, toast, confirm, existing: experiment }); });
-    root.querySelector('[data-archive]')?.addEventListener('click', async () => {
-      actionsMenu.open = false;
-      if (!await confirm('Archivar experimento', `Se conservarán los registros de <strong>${escapeHtml(experiment.code)}</strong>.`)) return;
-      experiment.archived = true;
-      await DB.updateExperiment(id, experiment);
-      toast('Experimento archivado', 'success');
-      navigate('experiments');
-    });
   }
 
   function speciesHasRecordedData(species) {
@@ -777,7 +778,7 @@ const Experiments = (() => {
         const observationOption = daySelect.querySelector('option[value="O"]');
         observationOption.disabled = sample.values.slice(0, Number(daySelect.dataset.day)).includes('M');
       });
-      experiment.events.push({ id: crypto.randomUUID(), sampleId: sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)), sampleUuid: sample.uuid, speciesCode, treatmentCode, day, date: dateAfter(experiment.design.startDate, day), state: STATUS[next].state, value: next || null, updatedAt: new Date().toISOString(), origin: 'local' });
+      experiment.events.push({ id: DB.newId(), sampleId: sampleIdentifier(sample, treatment, treatmentPosition(species, treatment)), sampleUuid: sample.uuid, speciesCode, treatmentCode, day, date: dateAfter(experiment.design.startDate, day), state: STATUS[next].state, value: next || null, updatedAt: new Date().toISOString(), origin: 'local' });
       select.dataset.prev = next;
       select.closest('td').className = `matrix-cell state-${STATUS[next].state}`;
       saveQueue = saveQueue.catch(() => undefined).then(() => DB.updateExperiment(id, experiment));
