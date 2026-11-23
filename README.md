@@ -22,6 +22,8 @@ Crea una ficha y completa las secciones de ubicación, parámetros ambientales, 
 
 Registra los datos generales y la ubicación, las características de la vivienda y los datos de medición. En la sección 3 selecciona el tipo de electreto **Short** o **Long**, su código, las fechas y los voltajes. El código de casa es opcional. Se pueden introducir coordenadas manualmente o solicitar las del dispositivo.
 
+En la sección 4, selecciona los equipos adicionales utilizados. Si marcas **Sí** para SaphyRAD, aparece el selector de sonda con las opciones **Sin sonda**, **AB16** y **GSP145**; la selección se guarda junto con la ficha.
+
 La tarjeta muestra el nombre, número de cuadra y código de casa si existe, además de provincia, cantón y parroquia. Exporta el PDF o el CSV de una ficha desde su tarjeta o formulario; también puedes descargar un CSV de toda la colección. El CSV contiene los datos generales y de medición, excluyendo el tipo de espacio y el piso de medición.
 
 ### Parámetros de Emergencia
@@ -63,5 +65,7 @@ python3 -m http.server 8765
 # Abrir http://localhost:8765/
 node scripts/generar-manual.js
 ```
+
+Para abrir temporalmente el servidor desde otro dispositivo de la misma red Tailscale, ejecuta `./iniciar-offline-pdf-maker.sh`; el script imprime la dirección que debes abrir en ese dispositivo.
 
 El último comando regenera [Manual-Ficharium.pdf](Manual-Ficharium.pdf) usando jsPDF incluido en el proyecto. **En cada nueva versión deben revisarse y actualizarse tanto este README como el manual PDF**, además de comprobar sus enlaces y contenido. Las instrucciones del proyecto están en [AGENTS.md](AGENTS.md).

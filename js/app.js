@@ -136,6 +136,8 @@
       await renderHome(params.type || params.tipo || 'cave');
     } else if (path === 'start') {
       renderStart();
+    } else if (path === 'about') {
+      renderAbout();
     } else if (path === 'close-chamber') {
       await CloseChamber.list(document.getElementById('app'), { navigate, toast: showToast, confirm, showMenu: showHomeMenu });
     } else if (path === 'close-chamber-detail') {
@@ -187,6 +189,13 @@
     $('[data-experiments]').addEventListener('click', () => navigate('experiments'));
     $('[data-chamber]').addEventListener('click', () => navigate('close-chamber'));
     $('#start-menu-btn').addEventListener('click', (e) => showHomeMenu(e));
+  }
+
+  function renderAbout() {
+    const url = `https://jorgeoswaldoc.github.io/offline-pdf-maker/Manual-Ficharium.pdf?v=${Date.now()}`;
+    const app = document.getElementById('app');
+    app.innerHTML = `<main class="about-screen"><header class="experiment-header"><button class="btn-icon collection-back" type="button" data-about-back aria-label="Volver a la página principal">←</button><div class="experiment-header-copy"><div class="experiment-title">Sobre Ficharium</div><div class="header-subtitle">Manual de uso</div></div><a class="btn btn-ghost btn-sm" href="${url}" target="_blank" rel="noopener noreferrer">Abrir PDF</a></header><iframe class="about-document" src="${url}" title="Manual de Ficharium"></iframe></main>`;
+    app.querySelector('[data-about-back]').addEventListener('click', () => navigate('start'));
   }
 
   // =========================================
@@ -332,7 +341,7 @@
       <div class="divider"></div>
       ${exportOptions}
       <div class="divider"></div>
-      ${!type ? `<a class="menu-item" data-about href="https://jorgeoswaldoc.github.io/offline-pdf-maker/Manual-Ficharium.pdf?v=${Date.now()}" target="_blank" rel="noopener noreferrer">📖 Sobre Ficharium</a><div class="divider"></div>` : ''}
+      ${!type ? '<button class="menu-item" data-menu="about">📖 Sobre Ficharium</button><div class="divider"></div>' : ''}
       ${!type ? (installedAlready
         ? `<button class="menu-item" data-menu="install" disabled style="opacity:.4;cursor:default">📲 App ya instalada</button>`
         : `<button class="menu-item" data-menu="install">📲 Instalar app</button>`) + '<div class="divider"></div>' : ''}
@@ -349,7 +358,6 @@
     currentMenuCleanup = cleanup;
 
     overlay.addEventListener('click', cleanup);
-    menu.querySelector('[data-about]')?.addEventListener('click', () => setTimeout(cleanup, 0));
     menu.querySelectorAll('[data-menu]').forEach(item => {
       item.addEventListener('click', () => {
         if (item.disabled) return;
@@ -360,6 +368,7 @@
         if (item.dataset.menu === 'export-radon') exportAllJSON('radon');
         if (item.dataset.menu === 'export-plants') exportAllJSON('plants');
         if (item.dataset.menu === 'export-chamber') exportAllJSON('close-chamber');
+        if (item.dataset.menu === 'about') navigate('about');
         if (item.dataset.menu === 'install') triggerInstall();
         if (item.dataset.menu === 'clear') showClearDialog();
       });
@@ -440,7 +449,7 @@
         seccionTransversal: '',
         parametros: { humedad: false, temperatura: false, presion: false, velViento: false, co2: false },
         equiposRadiacion: requestedType === 'radon'
-          ? { alphaE: false, gammaScout: false, saphyRad: false }
+          ? { alphaE: false, gammaScout: false, saphyRad: false, saphyRadSonda: '' }
           : { alphaE: false, gammaScout: false, dosimetros: false, saphyRad: false, saphyRadSonda: '' },
         equiposAdicionales: { medidorRadiacionCosmica: false },
         observaciones: '',
@@ -691,6 +700,15 @@
             ${toggleItem('AlphaE', 'equiposRadiacion.alphaE', e.alphaE)}
             ${toggleItem('GammaScout', 'equiposRadiacion.gammaScout', e.gammaScout)}
             ${toggleItem('SaphyRAD', 'equiposRadiacion.saphyRad', e.saphyRad)}
+          </div>
+          <div class="conditional-field ${e.saphyRad === true ? 'visible' : ''}" id="saphyrad-probe-field">
+            <label for="f-saphyrad-sonda">Sonda SaphyRAD</label>
+            <select id="f-saphyrad-sonda" name="saphyRadSonda">
+              <option value="">Selecciona una opción</option>
+              <option value="Sin sonda" ${e.saphyRadSonda === 'Sin sonda' ? 'selected' : ''}>Sin sonda</option>
+              <option value="AB16" ${e.saphyRadSonda === 'AB16' ? 'selected' : ''}>AB16</option>
+              <option value="GSP145" ${e.saphyRadSonda === 'GSP145' ? 'selected' : ''}>GSP145</option>
+            </select>
           </div></div>
         </div>`;
     }
@@ -1261,8 +1279,8 @@
       setNestedValue(ficha, name, val);
     });
 
+    ficha.equiposRadiacion.saphyRadSonda = document.getElementById('f-saphyrad-sonda')?.value || '';
     if (ficha.tipo === 'cave') {
-      ficha.equiposRadiacion.saphyRadSonda = document.getElementById('f-saphyrad-sonda')?.value || '';
       ficha.equiposAdicionales.otroEquipo = document.getElementById('f-otro-equipo')?.value || '';
     } else {
       // Campos retirados de Radón: no enviarlos en el parche para conservar datos históricos.

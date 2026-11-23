@@ -68,6 +68,7 @@ para('Crea una ficha y abre sus secciones para registrar ubicación, fechas, agu
 bullet('Usa Exportar PDF para revisar la ficha y sus fotografías; usa JSON para respaldarla o transferirla.');
 heading('Radón en Casas');
 para('Completa los datos generales y la ubicación. Puedes escribir las coordenadas o solicitarlas al dispositivo. El código de casa es opcional. Registra las características de la vivienda en la sección 2.');
+bullet('En la sección 4, marca los equipos adicionales utilizados. Al seleccionar Sí para SaphyRAD aparece el selector de sonda: Sin sonda, AB16 o GSP145. La selección queda guardada en la ficha.');
 bullet('En Datos de medición selecciona Short o Long, ingresa el código del electreto, las fechas y los voltajes. La fecha final no puede ser anterior a la inicial y el voltaje final no puede superar al inicial.');
 bullet('Las tarjetas muestran nombre, cuadra, código de casa cuando exista y ubicación. El CSV individual o general incluye los datos generales y de medición, sin espacio ni piso de medición.');
 box('Campos obligatorios',['Los campos marcados con * deben completarse para obtener una ficha completa y exportar el PDF. Los registros antiguos sin tipo de electreto necesitan ese dato para calcular la concentración.']);

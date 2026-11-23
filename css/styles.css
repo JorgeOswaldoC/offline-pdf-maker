@@ -1147,6 +1147,9 @@ body {
 
 /* Módulo local de experimentos */
 .experiment-screen { width: 100%; min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); }
+.about-screen { height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.about-screen .experiment-header { flex: 0 0 auto; }
+.about-document { width: 100%; flex: 1 1 auto; min-height: 0; border: 0; background: #fff; }
 .experiment-header { position: sticky; top: 0; z-index: 100; min-height: calc(64px + var(--safe-top)); display: flex; align-items: center; gap: 10px; padding: calc(var(--safe-top) + 6px) 16px 8px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .experiment-header-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .experiment-actions-menu { position: relative; flex: 0 0 auto; }
