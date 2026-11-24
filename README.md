@@ -20,7 +20,7 @@ Crea una ficha y completa las secciones de ubicación, parámetros ambientales, 
 
 ### Radón en Casas
 
-Registra los datos generales y la ubicación, las características de la vivienda y los datos de medición. En la sección 3 selecciona el tipo de electreto **Short** o **Long**, su código, las fechas y los voltajes. El código de casa es opcional. Se pueden introducir coordenadas manualmente o solicitar las del dispositivo.
+Registra los datos generales y la ubicación, las características de la vivienda y los datos de medición. En la sección 3 selecciona el tipo de electreto **Short** o **Long**, su código, las fechas, los voltajes y el fondo gamma. En los valores decimales se acepta coma o punto. El código de casa es opcional. Se pueden introducir coordenadas manualmente o solicitar las del dispositivo.
 
 En la sección 4, selecciona los equipos adicionales utilizados. Si marcas **Sí** para SaphyRAD, aparece el selector de sonda con las opciones **Sin sonda**, **AB16** y **GSP145**; la selección se guarda junto con la ficha.
 

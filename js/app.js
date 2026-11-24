@@ -50,15 +50,26 @@
     return ficha.tipo === 'radon'
       ? !!(ficha.nombresCompletos && ficha.provincia && ficha.canton && ficha.parroquia
         && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.altura !== '' && ficha.altura != null && ficha.tipoElectreto && ficha.codigoElectreto && ficha.fecha
-        && ficha.fechaFin && ficha.horaInicio && ficha.horaFin && String(ficha.fondoGamma ?? '').trim() !== '' && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
+        && ficha.fechaFin && ficha.horaInicio && ficha.horaFin && hasValidGammaBackground(ficha) && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
       : !!(ficha.cueva && ficha.provincia && ficha.canton && ficha.punto && ficha.fecha && ficha.horaInicio);
   }
 
   function hasValidVoltageRange(ficha) {
     if (String(ficha.voltajeInicial ?? '').trim() === '' || String(ficha.voltajeFinal ?? '').trim() === '') return false;
-    const initial = Number(ficha.voltajeInicial);
-    const final = Number(ficha.voltajeFinal);
-    return Number.isFinite(initial) && Number.isFinite(final) && initial > 0 && final < initial;
+    const initial = RadonCalc.parseDecimal(ficha.voltajeInicial);
+    const final = RadonCalc.parseDecimal(ficha.voltajeFinal);
+    return Number.isFinite(initial) && Number.isFinite(final) && initial > 0 && final >= 0 && final < initial;
+  }
+
+  function hasValidGammaBackground(ficha) {
+    if (String(ficha.fondoGamma ?? '').trim() === '') return false;
+    const background = RadonCalc.parseDecimal(ficha.fondoGamma);
+    return Number.isFinite(background) && background >= 0;
+  }
+
+  function normalizeDecimalString(value) {
+    const parsed = RadonCalc.parseDecimal(value);
+    return Number.isFinite(parsed) ? String(parsed) : String(value ?? '').trim().replace(',', '.');
   }
 
   function hasValidMeasurementDates(ficha) {
@@ -592,9 +603,9 @@
           <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" min="${esc(f.fecha)}" required></div></div>
           <p class="field-validation-message" id="date-validation-error" role="alert">La duración debe estar entre 2.0 y 7.0 días para SST o entre 30.0 y 120.0 días para SLT.</p>
           <div class="field-row"><div class="field"><label for="f-hora-inicio">Hora de inicio <span class="required-mark">*</span></label><input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}" required></div><div class="field"><label for="f-hora-fin">Hora de fin <span class="required-mark">*</span></label><input type="time" id="f-hora-fin" name="horaFin" value="${esc(f.horaFin)}" required></div></div>
-          <div class="field-row"><div class="field"><label for="f-voltaje-inicial">Voltaje inicial <span class="required-mark">*</span></label><input type="number" id="f-voltaje-inicial" name="voltajeInicial" value="${esc(f.voltajeInicial)}" placeholder="Voltaje inicial" step="any" inputmode="decimal" required></div><div class="field"><label for="f-voltaje-final">Voltaje final <span class="required-mark">*</span></label><input type="number" id="f-voltaje-final" name="voltajeFinal" value="${esc(f.voltajeFinal)}" placeholder="Voltaje final" step="any" inputmode="decimal" required></div></div>
-          <p class="field-validation-message" id="voltage-validation-error" role="alert">El voltaje inicial debe ser positivo y el final debe ser menor.</p>
-          <div class="field"><label for="f-fondo-gamma">Fondo gamma <span class="unit-symbol">[µSv/h]</span> <span class="required-mark">*</span></label><input type="number" id="f-fondo-gamma" name="fondoGamma" value="${esc(f.fondoGamma)}" placeholder="Ej. 0.129" step="any" min="0" inputmode="decimal" required></div>
+          <div class="field-row"><div class="field"><label for="f-voltaje-inicial">Voltaje inicial <span class="required-mark">*</span></label><input type="text" id="f-voltaje-inicial" name="voltajeInicial" value="${esc(f.voltajeInicial)}" placeholder="Voltaje inicial" inputmode="decimal" autocomplete="off" required></div><div class="field"><label for="f-voltaje-final">Voltaje final <span class="required-mark">*</span></label><input type="text" id="f-voltaje-final" name="voltajeFinal" value="${esc(f.voltajeFinal)}" placeholder="Voltaje final" inputmode="decimal" autocomplete="off" required></div></div>
+          <p class="field-validation-message" id="voltage-validation-error" role="alert">El voltaje inicial debe ser positivo y el final no negativo y menor que el inicial.</p>
+          <div class="field"><label for="f-fondo-gamma">Fondo gamma <span class="unit-symbol">[µSv/h]</span> <span class="required-mark">*</span></label><input type="text" id="f-fondo-gamma" name="fondoGamma" value="${esc(f.fondoGamma)}" placeholder="Ej. 0,129" inputmode="decimal" autocomplete="off" aria-describedby="gamma-validation-error" required><p class="field-validation-message" id="gamma-validation-error" role="alert">El fondo gamma debe ser un número igual o mayor que cero.</p></div>
 
           <div class="subsection-heading">Tipo de espacio donde se efectuará la medición</div>
           <div class="field"><label for="f-tipo-espacio">Tipo de espacio</label><select id="f-tipo-espacio" name="tipoEspacio"><option value="">Selecciona una opción</option><option value="dormitorio" ${f.tipoEspacio === 'dormitorio' ? 'selected' : ''}>Dormitorio</option><option value="sala" ${f.tipoEspacio === 'sala' ? 'selected' : ''}>Sala</option><option value="estudio_laboratorio" ${f.tipoEspacio === 'estudio_laboratorio' ? 'selected' : ''}>Estudio/Laboratorio</option><option value="otro" ${f.tipoEspacio === 'otro' ? 'selected' : ''}>Otro</option></select></div>
@@ -926,8 +937,10 @@
     if (initialVoltageInput && finalVoltageInput) {
       const updateVoltageValidity = () => {
         const hasBothValues = initialVoltageInput.value !== '' && finalVoltageInput.value !== '';
-        const invalidRange = hasBothValues && (Number(initialVoltageInput.value) <= 0 || Number(finalVoltageInput.value) >= Number(initialVoltageInput.value));
-        const message = invalidRange ? 'El voltaje inicial debe ser positivo y el final debe ser menor.' : '';
+        const initial = RadonCalc.parseDecimal(initialVoltageInput.value);
+        const final = RadonCalc.parseDecimal(finalVoltageInput.value);
+        const invalidRange = hasBothValues && (!Number.isFinite(initial) || !Number.isFinite(final) || initial <= 0 || final < 0 || final >= initial);
+        const message = invalidRange ? 'Ingresa voltajes válidos: el inicial debe ser positivo y el final debe ser no negativo y menor.' : '';
         finalVoltageInput.setCustomValidity(message);
         finalVoltageInput.classList.toggle('error', invalidRange);
         voltageError?.classList.toggle('visible', invalidRange);
@@ -935,6 +948,20 @@
       initialVoltageInput.addEventListener('input', updateVoltageValidity);
       finalVoltageInput.addEventListener('input', updateVoltageValidity);
       updateVoltageValidity();
+    }
+    const gammaInput = document.getElementById('f-fondo-gamma');
+    const gammaError = document.getElementById('gamma-validation-error');
+    if (gammaInput) {
+      const updateGammaValidity = () => {
+        const raw = gammaInput.value.trim();
+        const gamma = RadonCalc.parseDecimal(raw);
+        const invalid = raw !== '' && (!Number.isFinite(gamma) || gamma < 0);
+        gammaInput.setCustomValidity(invalid ? 'El fondo gamma debe ser un número igual o mayor que cero.' : '');
+        gammaInput.classList.toggle('error', invalid);
+        gammaError?.classList.toggle('visible', invalid);
+      };
+      gammaInput.addEventListener('input', updateGammaValidity);
+      updateGammaValidity();
     }
     const initialDateInput = document.getElementById('f-fecha');
     const finalDateInput = document.getElementById('f-fecha-fin');
@@ -1257,7 +1284,7 @@
       'pisoMedicion', 'numeroPisoMedicion', 'seccionTransversal', 'observaciones',
     ].forEach(name => {
       const el = document.querySelector(`[name="${name}"]`) || document.getElementById(`f-${name}`) || document.getElementById(`f-${camelToKebab(name)}`);
-      if (el) ficha[name] = el.value;
+      if (el) ficha[name] = ['voltajeInicial', 'voltajeFinal', 'fondoGamma'].includes(name) ? normalizeDecimalString(el.value) : el.value;
     });
 
     // Also try by ID directly
@@ -1276,7 +1303,8 @@
     if (ficha.tipo === 'radon') {
       ficha.tiposTerreno = [...document.querySelectorAll('[data-tag-box="tiposTerreno"] .tag-chip')].map(chip => chip.dataset.tagValue);
       ficha.altura = document.getElementById('f-altura')?.value ?? ficha.altura;
-      ficha.fondoGamma = document.getElementById('f-fondo-gamma')?.value ?? ficha.fondoGamma;
+      const gammaValue = document.getElementById('f-fondo-gamma')?.value;
+      ficha.fondoGamma = gammaValue == null ? ficha.fondoGamma : normalizeDecimalString(gammaValue);
       ficha.materialesConstruccion = [...document.querySelectorAll('[data-tag-box="materialesConstruccion"] .tag-chip')].map(chip => chip.dataset.tagValue);
       ficha.climatizacion = [...document.querySelectorAll('[data-tag-box="climatizacion"] .tag-chip')].map(chip => chip.dataset.tagValue);
       toggleNames.push(
@@ -1521,8 +1549,19 @@
         }
         return;
       }
+      if ((ficha.tipo || 'cave') === 'radon' && !hasValidGammaBackground(ficha)) {
+        showToast('Ingresa un fondo gamma numérico igual o mayor que cero', 'warning', 4000);
+        if (currentFichaId === id) {
+          document.getElementById('section-3')?.classList.add('expanded');
+          const gammaInput = document.getElementById('f-fondo-gamma');
+          gammaInput?.classList.add('error');
+          gammaInput?.focus();
+          gammaInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
       if ((ficha.tipo || 'cave') === 'radon' && !hasValidVoltageRange(ficha)) {
-        showToast('El voltaje final debe ser menor que el voltaje inicial', 'warning', 4000);
+        showToast('El voltaje final debe ser no negativo y menor que el voltaje inicial', 'warning', 4000);
         if (currentFichaId === id) {
           document.getElementById('section-3')?.classList.add('expanded');
           const finalInput = document.getElementById('f-voltaje-final');
