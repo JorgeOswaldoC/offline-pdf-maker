@@ -583,6 +583,11 @@ body {
   letter-spacing: 0.5px;
 }
 
+.field label .unit-symbol,
+.conditional-field label .unit-symbol {
+  text-transform: none;
+}
+
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="date"],
@@ -652,6 +657,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 7px;
+  margin-top: 8px;
 }
 
 .location-actions .btn:disabled {
@@ -1098,15 +1104,15 @@ body {
 .chamber-hint { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
 .chamber-table-scroll { width: 100%; margin: 12px 0; overscroll-behavior-x: contain; }
 .chamber-table { width: max-content; max-width: none; }
-.chamber-table { width: max(100%, 1395px); table-layout: fixed; }
-.chamber-table .chamber-col-weight { width: 90px; }
-.chamber-table .chamber-col-type { width: 120px; }
-.chamber-table .chamber-col-code { width: 125px; }
-.chamber-table .chamber-col-date { width: 160px; }
-.chamber-table .chamber-col-time { width: 120px; }
-.chamber-table .chamber-col-voltage { width: 110px; }
-.chamber-table .chamber-col-result { width: 120px; }
-.chamber-table .chamber-col-actions { width: 160px; }
+.chamber-table { width: max(100%, 1310px); table-layout: fixed; }
+.chamber-table .chamber-col-weight { width: 76px; }
+.chamber-table .chamber-col-type { width: 100px; }
+.chamber-table .chamber-col-code { width: 100px; }
+.chamber-table .chamber-col-date { width: 135px; }
+.chamber-table .chamber-col-time { width: 100px; }
+.chamber-table .chamber-col-voltage { width: 95px; }
+.chamber-table .chamber-col-result { width: 115px; }
+.chamber-table .chamber-col-actions { width: 140px; }
 .chamber-table th, .chamber-table td { min-width: 0; overflow: hidden; }
 .chamber-table th, .chamber-table td[data-result] { text-align: center; }
 .chamber-table input, .chamber-table select { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; }

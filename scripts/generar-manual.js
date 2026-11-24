@@ -40,6 +40,28 @@ function box(title, lines) {
   doc.setFont('NotoSans','bold'); doc.setFontSize(10); doc.setTextColor(C.text); doc.text(title,left+6,y+3);
   doc.setFont('NotoSans','normal'); doc.setFontSize(9.5); doc.setTextColor(C.muted); doc.text(formatted,left+6,y+10,{lineHeightFactor:1.45}); y += height+5;
 }
+function columnHeading(text,x,y,w) {
+  doc.setFont('NotoSans','bold'); doc.setFontSize(10); doc.setTextColor(C.text); doc.text(text,x,y);
+  doc.setDrawColor(C.line); doc.line(x,y+2,w+x,y+2); return y+8;
+}
+function columnText(text,x,y,w,size=8.5,color=C.muted) {
+  doc.setFont('NotoSans','normal'); doc.setFontSize(size); doc.setTextColor(color);
+  const lines=doc.splitTextToSize(text,w); doc.text(lines,x,y,{lineHeightFactor:1.35});
+  return y+lines.length*size*0.48+2;
+}
+function mathBox(text,x,y,w) {
+  doc.setFont('NotoSans','normal'); doc.setFontSize(9.2);
+  const lines=doc.splitTextToSize(text,w-10); const height=8+lines.length*4.4;
+  doc.setFillColor(C.card); doc.setDrawColor(C.line); doc.roundedRect(x,y,w,height,2,2,'FD');
+  doc.setTextColor(C.text); doc.text(lines,x+w/2,y+5,{align:'center',lineHeightFactor:1.2});
+  return y+height+2.2;
+}
+function columnBullet(text,x,y,w) {
+  doc.setFont('NotoSans','normal'); doc.setFontSize(8.5);
+  const lines=doc.splitTextToSize(text,w-7); doc.setFillColor(C.blue); doc.circle(x+1,y-1,0.65,'F');
+  doc.setTextColor(C.muted); doc.text(lines,x+5,y,{lineHeightFactor:1.35});
+  return y+lines.length*4.2+2;
+}
 page('Guía de uso','Ficharium');
 doc.setFillColor(C.teal); doc.roundedRect(left,y,29,23,3,3,'F'); doc.setFillColor('#f7f0e2'); doc.roundedRect(left+6,y-5,18,14,1,1,'F'); doc.setFillColor(C.teal); doc.roundedRect(left,y+5,29,18,3,3,'F'); doc.setFillColor('#ff8626'); doc.roundedRect(left+3,y+7,7,2.5,1,1,'F');
 y += 34;
@@ -91,11 +113,37 @@ bullet('Guarda con el icono de disco. Una fila amarilla está en edición; una v
 bullet('La concentración requiere fechas válidas con al menos un día de diferencia, voltajes válidos y un tipo de electreto.');
 heading('Descargar y respaldar');
 para('Cada tarjeta ofrece PDF, JSON y CSV. Dentro del experimento se pueden descargar el CSV y el PDF con el diseño y las tablas. Al final de la colección está el CSV que reúne todos los experimentos.');
-page('Cálculo y respaldos','Referencia');
-heading('Concentración de radón');
-para('Vi y Vf son los voltajes inicial y final; T es el número de días entre las fechas. El fondo BG se considera cero. La aplicación utiliza el factor correspondiente al tipo de electreto:');
-box('Factores de calibración',['Short: CF = 0.314473 + 0.260619 × (Vi + Vf) / 2','Long: CF = 0.031243 + 0.021880 × (Vi + Vf) / 2','Concentración [Bq/m³] = (Vi - Vf) / (T × CF) - BG','El resultado se redondea a tres decimales.']);
-para('Para preservar el punto decimal, la concentración CSV se entrega como texto con un tabulador inicial. La interpretación de un CSV depende también de la configuración de importación de la hoja de cálculo.');
+page('Cálculo de radón','Radón en Casas · Referencia técnica');
+const lx=left, lw=82, rx=108, rw=84;
+let ly=columnHeading('Ecuaciones aplicadas',lx,y,lw);
+ly=columnText('Ficharium calcula T con la diferencia exacta entre fecha y hora inicial y final. Las expresiones siguientes muestran el método y las unidades que aplica la versión actual.',lx,ly,lw,8.4);
+ly=mathBox('CF = A + B · ln((Vᵢ + V_f) / 2)',lx,ly,lw);
+ly=mathBox('BGₙGy/h = 1000 · BGµSv/h',lx,ly,lw);
+ly=mathBox('C = [(Vᵢ - V_f)/(T · CF) - (BGₙGy/h · G)/8.696] · 37 · ElevCF',lx,ly,lw);
+ly=mathBox('E₁ = 5;  E₂ = (2^(1/2)/(Vᵢ - V_f)) · 100;  E₃ = (3.7/C) · 100',lx,ly,lw);
+ly=mathBox('E_total = (E₁² + E₂² + E₃²)^(1/2)',lx,ly,lw);
+ly=mathBox('Error absoluto = |C · E_total / 100| Bq/m³',lx,ly,lw);
+ly=mathBox('ElevCF = 0.79 + (6 · 3.28084 · h) / 100000',lx,ly,lw);
+ly+=4;
+ly=columnText('C se informa en Bq/m³. El error porcentual E_total se redondea a tres decimales; la concentración y su error absoluto se reportan con tres decimales.',lx,ly,lw,8.1);
+
+let ry=columnHeading('Restricciones de la aplicación',rx,y,rw);
+ry=columnBullet('SST: duración inclusiva de 2 a 7 días. SLT: de 30 a 120 días. El intervalo se calcula en días decimales con fecha y hora.',rx,ry,rw);
+ry=columnBullet('Voltajes: Vᵢ debe ser mayor que cero y 0 <= V_f < Vᵢ.',rx,ry,rw);
+ry=columnBullet('El fondo gamma BG es obligatorio y no puede ser negativo. Se ingresa en µSv/h y se convierte a nGy/h multiplicando por 1000.',rx,ry,rw);
+ry=columnBullet('La altura sobre el nivel del mar debe ser un valor numérico. La versión actual usa ElevCF = 0.79 + (6 × 3.28084 × h)/100000 para SST y SLT.',rx,ry,rw);
+ry=columnBullet('Si faltan datos, el intervalo está fuera del rango o C es cero/no finita, la aplicación no presenta un resultado calculado.',rx,ry,rw);
+ry=columnHeading('Coeficientes usados',rx,ry+1,rw);
+ry=columnText('SST: A = 0.314473; B = 0.260619; G = 0.087.\nSLT: A = 0.031243; B = 0.021880; G = 0.087.',rx,ry,rw,8.4,C.text);
+ry=columnHeading('Referencia y alcance',rx,ry+1,rw);
+ry=columnText('Referencia técnica: E-PERM® System User’s Manual, versión 4.0.2, Rad Elec Inc., 7 de junio de 2026; apartados de factores de calibración, corrección por elevación y algoritmos (pp. 46–53).',rx,ry,rw,8.2);
+ry=columnText('Ficharium implementa la expresión y los coeficientes indicados en esta página. Es una adaptación de la aplicación: el manual del fabricante describe correcciones por configuración de cámara y otros términos que no se incorporan todos en este cálculo.',rx,ry,rw,8.2,C.amber);
+const manualUrl='https://www.radelec.com/manuals/E-PERM%20System%20User%27s%20Manual.pdf';
+doc.setFont('NotoSans','normal'); doc.setFontSize(7.3); doc.setTextColor(C.blue);
+const manualLink='Abrir el manual oficial de Rad Elec'; doc.text(manualLink,rx,ry+1);
+doc.link(rx,ry-3,doc.getTextWidth(manualLink),5,{url:manualUrl});
+
+page('Respaldos y privacidad','Datos locales');
 heading('Menú y respaldo');
 para('El menú de hamburguesa permite importar archivos JSON y exportar respaldos generales o por colección. El respaldo general incluye fichas, fotos y experimentos de plantas. Al importar un identificador existente se actualiza ese registro.');
 para('Limpiar caché y datos elimina los datos guardados en el navegador después de confirmar. Exporta antes un JSON. La aplicación no sincroniza registros entre dispositivos.');

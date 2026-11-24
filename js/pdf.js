@@ -262,6 +262,7 @@ const PDFGen = (() => {
         [ labelCell('Parroquia'), valueCell(ficha.parroquia), labelCell('Barrio'), valueCell(ficha.barrio) ],
         [ labelCell('Código de casa'), valueCell(ficha.codigoCasa), labelCell('Número de cuadra'), valueCell(ficha.numeroCuadra) ],
         [ labelCell('Latitud'), valueCell(ficha.latitud), labelCell('Longitud'), valueCell(ficha.longitud) ],
+        [ labelCell('Altura sobre el nivel del mar [m.s.n.m]'), valueCell(ficha.altura), { content: '' }, { content: '' } ],
       ]);
 
       checkPageBreak(62);
@@ -280,12 +281,14 @@ const PDFGen = (() => {
         doc.setFontSize(9);
         doc.setTextColor(...COLORS.labelText);
         doc.text('Esquema de la posición seleccionada', margin, y);
-        y += 14;
-        drawGroundPosition(doc, ficha.posicionPisoBajo, margin + 28, y, contentW - 56, 48);
-        y += 62;
+        y += 6;
+        const diagramWidth = 110;
+        const diagramHeight = 45;
+        drawGroundPosition(doc, ficha.posicionPisoBajo, margin + (contentW - diagramWidth) / 2, y, diagramWidth, diagramHeight);
+        y += diagramHeight + 7;
       }
 
-      checkPageBreak(42);
+      checkPageBreak(36);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.labelText);
@@ -304,11 +307,13 @@ const PDFGen = (() => {
         ? `Número de piso: ${ficha.numeroPisoMedicion || '—'}`
         : selectedLabel('pisoMedicion', ficha.pisoMedicion);
       autoTable([
-        [ labelCell('Tipo de electreto'), { content: ficha.tipoElectreto || '—', colSpan: 3 } ],
+        [ labelCell('Tipo de electreto'), { content: RadonCalc.canonicalType(ficha.tipoElectreto) === 'SST' ? 'Short-term (SST)' : RadonCalc.canonicalType(ficha.tipoElectreto) === 'SLT' ? 'Long-term (SLT)' : (ficha.tipoElectreto || '—'), colSpan: 3 } ],
         [ labelCell('Código del electreto'), { content: ficha.codigoElectreto || '—', colSpan: 3 } ],
         [ labelCell('Fecha inicial'), valueCell(formatDate(ficha.fecha)), labelCell('Fecha final'), valueCell(formatDate(ficha.fechaFin)) ],
         [ labelCell('Hora de inicio'), valueCell(formatTime(ficha.horaInicio)), labelCell('Hora de fin'), valueCell(formatTime(ficha.horaFin)) ],
         [ labelCell('Voltaje inicial'), valueCell(ficha.voltajeInicial), labelCell('Voltaje final'), valueCell(ficha.voltajeFinal) ],
+        [ labelCell('Fondo gamma [µSv/h]'), valueCell(ficha.fondoGamma), labelCell('Duración [días]'), valueCell(RadonCalc.durationDays(ficha.fecha, ficha.horaInicio, ficha.fechaFin, ficha.horaFin)?.toFixed(3)) ],
+        [ labelCell('Concentración [Bq/m³]'), valueCell(RadonCalc.calculate(ficha.tipoElectreto, ficha.fecha, ficha.horaInicio, ficha.fechaFin, ficha.horaFin, ficha.voltajeInicial, ficha.voltajeFinal, ficha.fondoGamma, ficha.altura)?.concentration), labelCell('± Error absoluto [Bq/m³]'), valueCell(RadonCalc.calculate(ficha.tipoElectreto, ficha.fecha, ficha.horaInicio, ficha.fechaFin, ficha.horaFin, ficha.voltajeInicial, ficha.voltajeFinal, ficha.fondoGamma, ficha.altura)?.absoluteError) ],
         [ labelCell('Tipo de espacio'), { content: spaceType, colSpan: 3 } ],
         [ labelCell('Piso de medición'), { content: measurementFloor, colSpan: 3 } ],
       ]);
@@ -351,8 +356,9 @@ const PDFGen = (() => {
       ]);
     } else {
       autoTable([
-        [ labelCell('AlphaE'), ynCell(eq.alphaE), labelCell('GammaScout'), ynCell(eq.gammaScout) ],
-        [ labelCell('Dosímetros'), ynCell(eq.dosimetros), labelCell('SaphyRAD'), ynCell(eq.saphyRad) ],
+        [ labelCell('GammaScout'), ynCell(eq.gammaScout), labelCell('Dosímetros'), ynCell(eq.dosimetros) ],
+        [ labelCell('AlphaE'), ynCell(eq.alphaE), labelCell('SaphyRAD'), ynCell(eq.saphyRad) ],
+        [ labelCell('Protección contra la humedad'), valueCell([eq.alphaEFundaProtectora === true ? 'Funda protectora' : '', eq.alphaEDesecante === true ? 'Desecante' : ''].filter(Boolean).join(', ') || '—', 3) ],
         [ labelCell('Sonda SaphyRAD'), { content: eq.saphyRad === true ? (eq.saphyRadSonda || '—') : '—', colSpan: 3 } ],
       ]);
     }
@@ -375,16 +381,23 @@ const PDFGen = (() => {
 
     const obsText = ficha.observaciones || '(Sin observaciones)';
     const obsLines = doc.splitTextToSize(obsText, contentW - 8);
-    const obsH = Math.max(20, obsLines.length * 5 + 8);
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...COLORS.gridBorder);
-    doc.setLineWidth(0.3);
-    doc.rect(margin, y, contentW, obsH, 'FD');
-    doc.setTextColor(...COLORS.valueText);
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(obsLines, margin + 4, y + 5);
-    y += obsH + 6;
+    let remainingObs = [...obsLines];
+    while (remainingObs.length) {
+      let capacity = Math.floor((pageH - margin - y - 10) / 5);
+      if (capacity < 2) { doc.addPage(); y = margin; capacity = Math.floor((pageH - margin - y - 10) / 5); }
+      const lines = remainingObs.splice(0, capacity);
+      const obsH = Math.max(20, lines.length * 5 + 8);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(...COLORS.gridBorder);
+      doc.setLineWidth(0.3);
+      doc.rect(margin, y, contentW, obsH, 'FD');
+      doc.setTextColor(...COLORS.valueText);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(lines, margin + 4, y + 5);
+      y += obsH + 6;
+      if (remainingObs.length) { doc.addPage(); y = margin; }
+    }
 
     // ---- FOTOS — una por página, respetando relación de aspecto ----
     for (let i = 0; i < fotos.length; i++) {

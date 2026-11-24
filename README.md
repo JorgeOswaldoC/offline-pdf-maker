@@ -24,7 +24,7 @@ Registra los datos generales y la ubicación, las características de la viviend
 
 En la sección 4, selecciona los equipos adicionales utilizados. Si marcas **Sí** para SaphyRAD, aparece el selector de sonda con las opciones **Sin sonda**, **AB16** y **GSP145**; la selección se guarda junto con la ficha.
 
-La tarjeta muestra el nombre, número de cuadra y código de casa si existe, además de provincia, cantón y parroquia. Exporta el PDF o el CSV de una ficha desde su tarjeta o formulario; también puedes descargar un CSV de toda la colección. El CSV contiene los datos generales y de medición, excluyendo el tipo de espacio y el piso de medición.
+La tarjeta muestra el nombre, número de cuadra y código de casa si existe, además de provincia, cantón y parroquia. Al elegir PDF se abre una vista previa con opciones para descargar y compartir. También puedes exportar CSV desde la tarjeta o el formulario y descargar un CSV de toda la colección. El CSV contiene los datos generales y de medición, excluyendo el tipo de espacio y el piso de medición.
 
 ### Parámetros de Emergencia
 
@@ -34,21 +34,31 @@ Después de introducir el código de acceso, crea un diseño con especies, trata
 
 Crea un experimento para un alimento o fertilizante, con marca, origen opcional, responsable, granulometrías, pesos y control opcional. El número de tratamientos es la cantidad de granulometrías multiplicada por la de pesos.
 
-Cada granulometría tiene una tabla. Añade una fila y selecciona el peso y el tipo de electreto; introduce código, fechas, horas y voltajes. El código de electreto no se puede repetir. Guarda cada fila con el icono correspondiente; para modificar una fila guardada, usa el lápiz y vuelve a guardarla. La fila en edición se muestra amarilla y la guardada, verde. El voltaje final no puede superar al inicial y la fecha final debe ser posterior a la inicial para calcular la concentración.
+Cada granulometría tiene una tabla. Añade una fila y selecciona el peso y el tipo de electreto; introduce código, fechas, horas y voltajes. El código de electreto no se puede repetir. Guarda cada fila con el icono correspondiente; para modificar una fila guardada, usa el lápiz y vuelve a guardarla. La fila en edición se muestra amarilla y la guardada, verde. La duración permitida es de 2 a 7 días para SST y de 30 a 120 días para SLT; el voltaje inicial debe ser positivo y el final debe ser menor.
 
-Puedes descargar CSV y PDF por experimento, respaldarlo en JSON o descargar un CSV de todos los experimentos. El PDF incluye el diseño y las tablas. También puedes marcar el experimento como completado o volverlo a parcial.
+Puedes descargar CSV y PDF por experimento, respaldarlo en JSON o descargar un CSV de todos los experimentos. El botón PDF abre una vista previa con opciones para descargar y compartir; el documento incluye el diseño y las tablas. También puedes marcar el experimento como completado o volverlo a parcial.
 
 ## Cálculo de concentración de radón
 
-En Close Chamber y en el CSV de Radón en Casas, `Vi` y `Vf` son los voltajes inicial y final, `T` son los días entre las fechas y `BG = 0`:
+Radón en Casas y Close Chamber usan el método de Ficharium basado en el sistema E-PERM. `V_i` y `V_f` son los voltajes inicial y final; `T` es la duración exacta en días decimales. El fondo gamma se ingresa en µSv/h y se convierte a nGy/h:
 
-```text
-Short: CF = 0.314473 + 0.260619 × (Vi + Vf) / 2
-Long:  CF = 0.031243 + 0.021880 × (Vi + Vf) / 2
-Concentración [Bq/m³] = (Vi − Vf) / (T × CF) − BG
-```
+$$CF=A+B\ln\left(\frac{V_i+V_f}{2}\right)$$
 
-El resultado se redondea a tres decimales. Si faltan el tipo, las fechas o los voltajes, si el tiempo es cero o negativo, o si los voltajes no son válidos, la concentración queda vacía. Los registros anteriores sin tipo de electreto requieren seleccionarlo. Para conservar el punto decimal en hojas de cálculo, la concentración CSV se exporta como texto con un tabulador inicial; CSV no dispone de tipos de celda propios.
+$$BG_{\mathrm{nGy}/\mathrm{h}}=1000\,BG_{\mu\mathrm{Sv}/\mathrm{h}}$$
+
+$$C=\left[\frac{V_i-V_f}{T\,CF}-\frac{BG_{\mathrm{nGy}/\mathrm{h}}\,G}{8.696}\right]37\,ElevCF\quad[\mathrm{Bq/m^3}]$$
+
+La incertidumbre combina los componentes de voltaje y fondo gamma:
+
+$$E_1=5,\quad E_2=\frac{\sqrt{2}}{V_i-V_f}\,100,\quad E_3=\frac{3.7}{C}\,100$$
+
+$$E_{total}=\sqrt{E_1^2+E_2^2+E_3^2},\qquad Error_{abs}=\left|\frac{C\,E_{total}}{100}\right|$$
+
+Ficharium usa estos coeficientes y corrección de elevación: SST `A=0.314473`, `B=0.260619`, `G=0.087`; SLT `A=0.031243`, `B=0.021880`, `G=0.087`; `ElevCF=0.79+(6×3.28084×h)/100000`. La implementación requiere `V_i>0`, `0≤V_f<V_i`, un fondo gamma no negativo y altura numérica. Acepta 2–7 días para SST y 30–120 días para SLT, incluidos los límites. La duración se calcula con fecha y hora; la concentración y el error se reportan con tres decimales. Si falta un dato o no puede calcularse un resultado finito y distinto de cero, el resultado queda vacío.
+
+El manual incluido agrega una página con estas ecuaciones y restricciones. La referencia metodológica es el [E-PERM System User’s Manual, versión 4.0.2 (Rad Elec)](https://www.radelec.com/manuals/E-PERM%20System%20User%27s%20Manual.pdf), en particular los apartados de factores de calibración, elevación y algoritmos (pp. 46–53). Ficharium documenta sus coeficientes y adaptaciones; para configuraciones específicas de cámara, consulta el manual del fabricante.
+
+Para conservar el punto decimal en hojas de cálculo, la concentración CSV se exporta como texto con un tabulador inicial; CSV no dispone de tipos de celda propios.
 
 ## Respaldos y limpieza
 

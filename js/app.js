@@ -49,8 +49,8 @@
   function isFichaComplete(ficha) {
     return ficha.tipo === 'radon'
       ? !!(ficha.nombresCompletos && ficha.provincia && ficha.canton && ficha.parroquia
-        && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.tipoElectreto && ficha.codigoElectreto && ficha.fecha
-        && ficha.fechaFin && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
+        && ficha.numeroCuadra && ficha.latitud && ficha.longitud && ficha.altura !== '' && ficha.altura != null && ficha.tipoElectreto && ficha.codigoElectreto && ficha.fecha
+        && ficha.fechaFin && ficha.horaInicio && ficha.horaFin && String(ficha.fondoGamma ?? '').trim() !== '' && hasValidMeasurementDates(ficha) && hasValidVoltageRange(ficha))
       : !!(ficha.cueva && ficha.provincia && ficha.canton && ficha.punto && ficha.fecha && ficha.horaInicio);
   }
 
@@ -58,11 +58,14 @@
     if (String(ficha.voltajeInicial ?? '').trim() === '' || String(ficha.voltajeFinal ?? '').trim() === '') return false;
     const initial = Number(ficha.voltajeInicial);
     const final = Number(ficha.voltajeFinal);
-    return Number.isFinite(initial) && Number.isFinite(final) && final <= initial;
+    return Number.isFinite(initial) && Number.isFinite(final) && initial > 0 && final < initial;
   }
 
   function hasValidMeasurementDates(ficha) {
-    return Boolean(ficha.fecha && ficha.fechaFin && ficha.fechaFin >= ficha.fecha);
+    const days = RadonCalc.durationDays(ficha.fecha, ficha.horaInicio, ficha.fechaFin, ficha.horaFin);
+    const type = RadonCalc.canonicalType(ficha.tipoElectreto);
+    const bounds = type === 'SST' ? [2, 7] : type === 'SLT' ? [30, 120] : null;
+    return Boolean(bounds && days !== null && days >= bounds[0] && days <= bounds[1]);
   }
 
   function debounce(fn, ms) {
@@ -441,10 +444,10 @@
       ficha = {
         tipo: requestedType,
         id: DB.newId(),
-        cueva: '', punto: '', sitio: '', nombresCompletos: '', provincia: '', canton: '', parroquia: '', barrio: '', codigoCasa: '', numeroCuadra: '', latitud: '', longitud: '',
+        cueva: '', punto: '', sitio: '', nombresCompletos: '', provincia: '', canton: '', parroquia: '', barrio: '', codigoCasa: '', numeroCuadra: '', latitud: '', longitud: '', altura: '',
         tipologiaConstruccion: '', tipologiaConstruccionOtro: '', posicionPisoBajo: '', posicionPisoBajoOtro: '', usoSotano: '', usoSotanoOtro: '',
         anoConstruccion: '', tiposTerreno: [], materialesConstruccion: [], climatizacion: [], humedadParedes: null, grietasParedes: null,
-        tipoElectreto: '', codigoElectreto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '', voltajeInicial: '', voltajeFinal: '', tipoEspacio: '', tipoEspacioOtro: '', pisoMedicion: '', numeroPisoMedicion: '',
+        tipoElectreto: '', codigoElectreto: '', fecha: '', fechaFin: '', horaInicio: '', horaFin: '', voltajeInicial: '', voltajeFinal: '', fondoGamma: '', tipoEspacio: '', tipoEspacioOtro: '', pisoMedicion: '', numeroPisoMedicion: '',
         agua: '', aguaTipo: { corriendo: null, estancada: null },
         seccionTransversal: '',
         parametros: { humedad: false, temperatura: false, presion: false, velViento: false, co2: false },
@@ -498,7 +501,8 @@
         <div class="form-actions">
           <div class="save-status" id="save-status">💾 Guardado automáticamente</div>
           <button class="btn btn-primary btn-full" id="export-pdf-btn">📄 Exportar PDF</button>
-          ${type === 'radon' ? `<button class="btn btn-primary btn-full" id="export-csv-btn">📄 Exportar CSV</button>${RadonCalc.noteHtml()}` : ''}
+          ${type === 'radon' ? '<button class="btn btn-primary btn-full" id="export-csv-btn">📄 Exportar CSV</button>' : ''}
+          ${type === 'radon' ? RadonCalc.noteHtml() : ''}
         </div>
       </div>`;
 
@@ -515,7 +519,8 @@
           <div class="field-row"><div class="field"><label for="f-parroquia">Parroquia <span class="required-mark">*</span></label><input type="text" id="f-parroquia" name="parroquia" value="${esc(f.parroquia)}" placeholder="Parroquia" required></div><div class="field"><label for="f-barrio">Barrio</label><input type="text" id="f-barrio" name="barrio" value="${esc(f.barrio)}" placeholder="Barrio o sector"></div></div>
           <div class="field-row"><div class="field"><label for="f-codigo-casa">Código de casa</label><input type="text" id="f-codigo-casa" name="codigoCasa" value="${esc(f.codigoCasa)}" placeholder="Código de vivienda"></div><div class="field"><label for="f-numero-cuadra">Número de cuadra <span class="required-mark">*</span></label><input type="text" id="f-numero-cuadra" name="numeroCuadra" value="${esc(f.numeroCuadra)}" placeholder="Ej. C-12" required></div></div>
           <div class="field-row coordinate-fields"><div class="field"><label for="f-latitud">Latitud <span class="required-mark">*</span></label><input type="number" id="f-latitud" name="latitud" value="${esc(f.latitud)}" placeholder="Ej. -0.180653" step="any" inputmode="decimal" required></div><div class="field"><label for="f-longitud">Longitud <span class="required-mark">*</span></label><input type="number" id="f-longitud" name="longitud" value="${esc(f.longitud)}" placeholder="Ej. -78.467834" step="any" inputmode="decimal" required></div></div>
-          <div class="location-actions"><button type="button" class="btn btn-ghost btn-full" id="use-location-btn">📍 Obtener coordenadas del dispositivo</button><div class="location-status" id="location-status" role="status" aria-live="polite">También puedes escribir o corregir las coordenadas manualmente.</div></div>
+          <div class="field"><label for="f-altura">Altura sobre el nivel del mar <span class="unit-symbol">[m.s.n.m]</span> <span class="required-mark">*</span></label><input type="number" id="f-altura" name="altura" value="${esc(f.altura)}" placeholder="Ej. 2810" step="any" inputmode="decimal" required></div>
+          <div class="location-actions"><button type="button" class="btn btn-ghost btn-full" id="use-location-btn">📍 Obtener coordenadas y altura del dispositivo</button><div class="location-status" id="location-status" role="status" aria-live="polite">También puedes escribir o corregir las coordenadas y la altura manualmente.</div></div>
         </div>
       </div>`;
   }
@@ -582,13 +587,14 @@
       <div class="form-section" id="section-3">
         <button class="section-toggle" data-section="3"><div class="section-number">3</div><span class="section-title">Datos de medición</span><span class="section-chevron">▼</span></button>
         <div class="section-body">
-          <div class="field"><label for="f-tipo-electreto">Tipo de electreto <span class="required-mark">*</span></label><select id="f-tipo-electreto" name="tipoElectreto" required><option value="">Selecciona una opción</option><option value="Short" ${f.tipoElectreto === 'Short' ? 'selected' : ''}>Short</option><option value="Long" ${f.tipoElectreto === 'Long' ? 'selected' : ''}>Long</option></select></div>
+          <div class="field"><label for="f-tipo-electreto">Tipo de electreto <span class="required-mark">*</span></label><select id="f-tipo-electreto" name="tipoElectreto" required><option value="">Selecciona una opción</option><option value="SST" ${['SST','Short'].includes(f.tipoElectreto) ? 'selected' : ''}>Short-term (SST)</option><option value="SLT" ${['SLT','Long'].includes(f.tipoElectreto) ? 'selected' : ''}>Long-term (SLT)</option></select></div>
           <div class="field"><label for="f-codigo-electreto">Código del electreto <span class="required-mark">*</span></label><input type="text" id="f-codigo-electreto" name="codigoElectreto" value="${esc(f.codigoElectreto)}" placeholder="Código o identificador del electreto" required></div>
-          <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" max="${esc(f.fecha)}" required></div></div>
-          <p class="field-validation-message" id="date-validation-error" role="alert">La fecha final no puede ser anterior a la fecha inicial.</p>
-          <div class="field-row"><div class="field"><label for="f-hora-inicio">Hora de inicio</label><input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}"></div><div class="field"><label for="f-hora-fin">Hora de fin</label><input type="time" id="f-hora-fin" name="horaFin" value="${esc(f.horaFin)}"></div></div>
+          <div class="field-row"><div class="field"><label for="f-fecha">Fecha inicial <span class="required-mark">*</span></label><input type="date" id="f-fecha" name="fecha" value="${esc(f.fecha)}" required></div><div class="field"><label for="f-fecha-fin">Fecha final <span class="required-mark">*</span></label><input type="date" id="f-fecha-fin" name="fechaFin" value="${esc(f.fechaFin)}" min="${esc(f.fecha)}" required></div></div>
+          <p class="field-validation-message" id="date-validation-error" role="alert">La duración debe estar entre 2.0 y 7.0 días para SST o entre 30.0 y 120.0 días para SLT.</p>
+          <div class="field-row"><div class="field"><label for="f-hora-inicio">Hora de inicio <span class="required-mark">*</span></label><input type="time" id="f-hora-inicio" name="horaInicio" value="${esc(f.horaInicio)}" required></div><div class="field"><label for="f-hora-fin">Hora de fin <span class="required-mark">*</span></label><input type="time" id="f-hora-fin" name="horaFin" value="${esc(f.horaFin)}" required></div></div>
           <div class="field-row"><div class="field"><label for="f-voltaje-inicial">Voltaje inicial <span class="required-mark">*</span></label><input type="number" id="f-voltaje-inicial" name="voltajeInicial" value="${esc(f.voltajeInicial)}" placeholder="Voltaje inicial" step="any" inputmode="decimal" required></div><div class="field"><label for="f-voltaje-final">Voltaje final <span class="required-mark">*</span></label><input type="number" id="f-voltaje-final" name="voltajeFinal" value="${esc(f.voltajeFinal)}" placeholder="Voltaje final" step="any" inputmode="decimal" required></div></div>
-          <p class="field-validation-message" id="voltage-validation-error" role="alert">El voltaje final no puede ser mayor que el voltaje inicial.</p>
+          <p class="field-validation-message" id="voltage-validation-error" role="alert">El voltaje inicial debe ser positivo y el final debe ser menor.</p>
+          <div class="field"><label for="f-fondo-gamma">Fondo gamma <span class="unit-symbol">[µSv/h]</span> <span class="required-mark">*</span></label><input type="number" id="f-fondo-gamma" name="fondoGamma" value="${esc(f.fondoGamma)}" placeholder="Ej. 0.129" step="any" min="0" inputmode="decimal" required></div>
 
           <div class="subsection-heading">Tipo de espacio donde se efectuará la medición</div>
           <div class="field"><label for="f-tipo-espacio">Tipo de espacio</label><select id="f-tipo-espacio" name="tipoEspacio"><option value="">Selecciona una opción</option><option value="dormitorio" ${f.tipoEspacio === 'dormitorio' ? 'selected' : ''}>Dormitorio</option><option value="sala" ${f.tipoEspacio === 'sala' ? 'selected' : ''}>Sala</option><option value="estudio_laboratorio" ${f.tipoEspacio === 'estudio_laboratorio' ? 'selected' : ''}>Estudio/Laboratorio</option><option value="otro" ${f.tipoEspacio === 'otro' ? 'selected' : ''}>Otro</option></select></div>
@@ -721,11 +727,12 @@
         </button>
         <div class="section-body">
           <div class="toggle-grid">
-            ${toggleItem('AlphaE', 'equiposRadiacion.alphaE', e.alphaE)}
             ${toggleItem('GammaScout', 'equiposRadiacion.gammaScout', e.gammaScout)}
             ${toggleItem('Dosímetros', 'equiposRadiacion.dosimetros', e.dosimetros)}
+            ${toggleItem('AlphaE', 'equiposRadiacion.alphaE', e.alphaE)}
             ${toggleItem('SaphyRAD', 'equiposRadiacion.saphyRad', e.saphyRad)}
           </div>
+          <div class="conditional-field ${e.alphaE === true ? 'visible' : ''}" id="alphae-humidity-protection-field"><div class="subsection-heading">Protección contra la humedad</div><div class="toggle-grid"><label class="checkbox-option ${e.alphaEFundaProtectora === true ? 'selected' : ''}"><input type="checkbox" name="alphaEFundaProtectora" ${e.alphaEFundaProtectora === true ? 'checked' : ''}><span>Funda protectora</span></label><label class="checkbox-option ${e.alphaEDesecante === true ? 'selected' : ''}"><input type="checkbox" name="alphaEDesecante" ${e.alphaEDesecante === true ? 'checked' : ''}><span>Desecante</span></label></div></div>
           <div class="conditional-field ${e.saphyRad === true ? 'visible' : ''}" id="saphyrad-probe-field">
             <label for="f-saphyrad-sonda">Sonda SaphyRAD</label>
             <select id="f-saphyrad-sonda" name="saphyRadSonda">
@@ -919,8 +926,8 @@
     if (initialVoltageInput && finalVoltageInput) {
       const updateVoltageValidity = () => {
         const hasBothValues = initialVoltageInput.value !== '' && finalVoltageInput.value !== '';
-        const invalidRange = hasBothValues && Number(finalVoltageInput.value) > Number(initialVoltageInput.value);
-        const message = invalidRange ? 'El voltaje final no puede ser mayor que el voltaje inicial.' : '';
+        const invalidRange = hasBothValues && (Number(initialVoltageInput.value) <= 0 || Number(finalVoltageInput.value) >= Number(initialVoltageInput.value));
+        const message = invalidRange ? 'El voltaje inicial debe ser positivo y el final debe ser menor.' : '';
         finalVoltageInput.setCustomValidity(message);
         finalVoltageInput.classList.toggle('error', invalidRange);
         voltageError?.classList.toggle('visible', invalidRange);
@@ -934,15 +941,28 @@
     const dateError = document.getElementById('date-validation-error');
     if (initialDateInput && finalDateInput) {
       const updateDateValidity = () => {
-        finalDateInput.max = initialDateInput.value;
-        const invalidRange = Boolean(initialDateInput.value && finalDateInput.value
-          && finalDateInput.value < initialDateInput.value);
-        finalDateInput.setCustomValidity(invalidRange ? 'La fecha final no puede ser anterior a la fecha inicial.' : '');
+        finalDateInput.min = initialDateInput.value;
+        let invalidRange = false;
+        let message = '';
+        if (ficha.tipo === 'radon') {
+          const type = RadonCalc.canonicalType(document.getElementById('f-tipo-electreto')?.value);
+          const days = RadonCalc.durationDays(initialDateInput.value, document.getElementById('f-hora-inicio')?.value,
+            finalDateInput.value, document.getElementById('f-hora-fin')?.value);
+          const bounds = type === 'SST' ? [2, 7] : type === 'SLT' ? [30, 120] : null;
+          invalidRange = Boolean(initialDateInput.value && finalDateInput.value
+            && (!bounds || days === null || days < bounds[0] || days > bounds[1]));
+          message = 'La duración debe estar dentro del rango permitido para el tipo de electreto.';
+        } else {
+          invalidRange = Boolean(initialDateInput.value && finalDateInput.value && finalDateInput.value < initialDateInput.value);
+          message = 'La fecha final no puede ser anterior a la fecha inicial.';
+        }
+        finalDateInput.setCustomValidity(invalidRange ? message : '');
         finalDateInput.classList.toggle('error', invalidRange);
         dateError?.classList.toggle('visible', invalidRange);
       };
       initialDateInput.addEventListener('input', updateDateValidity);
       finalDateInput.addEventListener('input', updateDateValidity);
+      ['f-tipo-electreto', 'f-hora-inicio', 'f-hora-fin'].forEach(id => document.getElementById(id)?.addEventListener('input', updateDateValidity));
       updateDateValidity();
     }
     const conditionalSelects = [
@@ -1047,6 +1067,7 @@
       const status = document.getElementById('location-status');
       const latitudeInput = document.getElementById('f-latitud');
       const longitudeInput = document.getElementById('f-longitud');
+      const altitudeInput = document.getElementById('f-altura');
       if (!navigator.geolocation) {
         if (status) status.textContent = 'Este dispositivo o navegador no ofrece geolocalización.';
         showToast('Geolocalización no disponible', 'warning', 3500);
@@ -1062,11 +1083,12 @@
         (position) => {
           if (latitudeInput) latitudeInput.value = position.coords.latitude.toFixed(6);
           if (longitudeInput) longitudeInput.value = position.coords.longitude.toFixed(6);
+          if (altitudeInput && Number.isFinite(position.coords.altitude)) altitudeInput.value = position.coords.altitude.toFixed(1);
           const accuracy = Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null;
-          if (status) status.textContent = accuracy ? `Coordenadas obtenidas. Precisión aproximada: ${accuracy} m.` : 'Coordenadas obtenidas.';
+          if (status) status.textContent = `${Number.isFinite(position.coords.altitude) ? 'Coordenadas y altura obtenidas.' : 'Coordenadas obtenidas; ingresa la altura manualmente porque el dispositivo no la proporcionó.'}${accuracy ? ` Precisión aproximada: ${accuracy} m.` : ''}`;
           locationBtn.disabled = false;
           locationBtn.removeAttribute('aria-busy');
-          locationBtn.textContent = '📍 Actualizar coordenadas del dispositivo';
+          locationBtn.textContent = '📍 Actualizar coordenadas y altura';
           autoSave();
           showToast('Coordenadas actualizadas', 'success');
         },
@@ -1109,6 +1131,11 @@
         save();
       });
     });
+    $$('input[name="alphaEFundaProtectora"], input[name="alphaEDesecante"]').forEach(cb => cb.addEventListener('change', () => {
+      cb.closest('.checkbox-option')?.classList.toggle('selected', cb.checked);
+      setNestedValue(ficha, `equiposRadiacion.${cb.name}`, cb.checked);
+      save();
+    }));
 
     // Toggle buttons (Sí/No for all toggle fields)
     $$('[data-toggle]').forEach(btn => {
@@ -1127,6 +1154,7 @@
           probeField?.classList.toggle('visible', isYes);
           if (!isYes && probeSelect) probeSelect.value = '';
         }
+        if (name === 'equiposRadiacion.alphaE') document.getElementById('alphae-humidity-protection-field')?.classList.toggle('visible', isYes);
         save();
       });
     });
@@ -1223,7 +1251,7 @@
 
     // Text fields
     [
-      'cueva', 'punto', 'sitio', 'nombresCompletos', 'provincia', 'canton', 'parroquia', 'barrio', 'codigoCasa', 'numeroCuadra', 'latitud', 'longitud',
+      'cueva', 'punto', 'sitio', 'nombresCompletos', 'provincia', 'canton', 'parroquia', 'barrio', 'codigoCasa', 'numeroCuadra', 'latitud', 'longitud', 'altura', 'fondoGamma',
       'tipologiaConstruccion', 'tipologiaConstruccionOtro', 'posicionPisoBajo', 'posicionPisoBajoOtro', 'usoSotano', 'usoSotanoOtro', 'anoConstruccion',
       'tipoElectreto', 'codigoElectreto', 'fecha', 'fechaFin', 'horaInicio', 'horaFin', 'voltajeInicial', 'voltajeFinal', 'tipoEspacio', 'tipoEspacioOtro',
       'pisoMedicion', 'numeroPisoMedicion', 'seccionTransversal', 'observaciones',
@@ -1247,6 +1275,8 @@
     const toggleNames = [];
     if (ficha.tipo === 'radon') {
       ficha.tiposTerreno = [...document.querySelectorAll('[data-tag-box="tiposTerreno"] .tag-chip')].map(chip => chip.dataset.tagValue);
+      ficha.altura = document.getElementById('f-altura')?.value ?? ficha.altura;
+      ficha.fondoGamma = document.getElementById('f-fondo-gamma')?.value ?? ficha.fondoGamma;
       ficha.materialesConstruccion = [...document.querySelectorAll('[data-tag-box="materialesConstruccion"] .tag-chip')].map(chip => chip.dataset.tagValue);
       ficha.climatizacion = [...document.querySelectorAll('[data-tag-box="climatizacion"] .tag-chip')].map(chip => chip.dataset.tagValue);
       toggleNames.push(
@@ -1281,6 +1311,8 @@
 
     ficha.equiposRadiacion.saphyRadSonda = document.getElementById('f-saphyrad-sonda')?.value || '';
     if (ficha.tipo === 'cave') {
+      ficha.equiposRadiacion.alphaEFundaProtectora = document.querySelector('[name="alphaEFundaProtectora"]')?.checked || false;
+      ficha.equiposRadiacion.alphaEDesecante = document.querySelector('[name="alphaEDesecante"]')?.checked || false;
       ficha.equiposAdicionales.otroEquipo = document.getElementById('f-otro-equipo')?.value || '';
     } else {
       // Campos retirados de Radón: no enviarlos en el parche para conservar datos históricos.
@@ -1412,10 +1444,13 @@
     const columns = [
       ['Nombres completos','nombresCompletos'], ['Provincia','provincia'], ['Cantón','canton'],
       ['Parroquia','parroquia'], ['Barrio','barrio'], ['Código de casa','codigoCasa'],
-      ['Número de cuadra','numeroCuadra'], ['Latitud','latitud'], ['Longitud','longitud'],
+      ['Número de cuadra','numeroCuadra'], ['Latitud','latitud'], ['Longitud','longitud'], ['Altura sobre el nivel del mar [m.s.n.m]','altura'],
       ['Tipo de electreto','tipoElectreto'], ['Código del electreto','codigoElectreto'],
       ['Fecha inicial','fecha'], ['Fecha final','fechaFin'], ['Hora de inicio','horaInicio'],
-      ['Hora de fin','horaFin'], ['Voltaje inicial [V]','voltajeInicial'], ['Voltaje final [V]','voltajeFinal'],
+      ['Hora de fin','horaFin'], ['T [días]','T'], ['Voltaje inicial [V]','voltajeInicial'], ['Voltaje final [V]','voltajeFinal'],
+      ['CF calculado','CF'], ['BG [µSv/h]','BG'], ['BG [nGy/h]','BG_nano'], ['G','G'], ['BG corregido [Bq/m³]','G_background'],
+      ['ElevCF','ElevCF'], ['E1 [%]','E1'], ['E2 [%]','E2'], ['E3 [%]','E3'], ['Error total [%]','totalError'],
+      ['Concentración de radón [Bq/m³]','concentration'], ['± Error absoluto [Bq/m³]','absoluteError'],
     ];
     const escapeCell = value => {
       let text = String(value ?? '');
@@ -1423,9 +1458,14 @@
       return `"${text.replace(/"/g, '""')}"`;
     };
     const valid = records.filter(f => f && f.tipo === 'radon');
-    const rows = [[...columns.map(([label]) => label), 'Concentración [Bq/m³]'], ...valid.map(f => {
-      const value = RadonCalc.concentration(f.tipoElectreto, f.fecha, f.fechaFin, f.voltajeInicial, f.voltajeFinal);
-      return [...columns.map(([, key]) => f[key] ?? ''), value === null ? '' : {decimalText:value.toFixed(3)}];
+    const rows = [columns.map(([label]) => label), ...valid.map(f => {
+      const calc = RadonCalc.calculate(f.tipoElectreto, f.fecha, f.horaInicio, f.fechaFin, f.horaFin,
+        f.voltajeInicial, f.voltajeFinal, f.fondoGamma, f.altura);
+      const source = {...f, ...(calc || {})};
+      return columns.map(([, key]) => {
+        const value = key === 'tipoElectreto' ? RadonCalc.canonicalType(source[key]) : source[key] ?? '';
+        return typeof value === 'number' ? {decimalText:value.toFixed(['CF','ElevCF'].includes(key) ? 6 : 3)} : value;
+      });
     })];
     const serialize = value => value && typeof value === 'object' && value.decimalText ? `"\t${value.decimalText}"` : escapeCell(value);
     const blob = new Blob(['\ufeff' + rows.map(row => row.map(serialize).join(',')).join('\r\n')], {type:'text/csv;charset=utf-8'});
@@ -1454,12 +1494,16 @@
             ['numeroCuadra', 'f-numero-cuadra', 'número de cuadra'],
             ['latitud', 'f-latitud', 'latitud'],
             ['longitud', 'f-longitud', 'longitud'],
+            ['altura', 'f-altura', 'altura sobre el nivel del mar'],
             ['tipoElectreto', 'f-tipo-electreto', 'tipo de electreto'],
             ['codigoElectreto', 'f-codigo-electreto', 'código del electreto'],
             ['fecha', 'f-fecha', 'fecha inicial'],
             ['fechaFin', 'f-fecha-fin', 'fecha final'],
+            ['horaInicio', 'f-hora-inicio', 'hora de inicio'],
+            ['horaFin', 'f-hora-fin', 'hora de fin'],
             ['voltajeInicial', 'f-voltaje-inicial', 'voltaje inicial'],
             ['voltajeFinal', 'f-voltaje-final', 'voltaje final'],
+            ['fondoGamma', 'f-fondo-gamma', 'fondo gamma'],
           ]
         : [
             ['provincia', 'f-provincia', 'provincia'],
@@ -1478,7 +1522,7 @@
         return;
       }
       if ((ficha.tipo || 'cave') === 'radon' && !hasValidVoltageRange(ficha)) {
-        showToast('El voltaje final no puede ser mayor que el inicial', 'warning', 4000);
+        showToast('El voltaje final debe ser menor que el voltaje inicial', 'warning', 4000);
         if (currentFichaId === id) {
           document.getElementById('section-3')?.classList.add('expanded');
           const finalInput = document.getElementById('f-voltaje-final');
@@ -1489,7 +1533,7 @@
         return;
       }
       if ((ficha.tipo || 'cave') === 'radon' && !hasValidMeasurementDates(ficha)) {
-        showToast('La fecha final no puede ser anterior a la fecha inicial', 'warning', 4000);
+        showToast('Revisa la duración: SST permite 2–7 días y SLT 30–120 días', 'warning', 4000);
         if (currentFichaId === id) {
           document.getElementById('section-3')?.classList.add('expanded');
           const finalInput = document.getElementById('f-fecha-fin');
@@ -1500,73 +1544,13 @@
         return;
       }
       const { blob, filename } = await PDFGen.generate(ficha, fotos);
-      showPdfPreview(blob, filename);
+      PDFPreview.show(blob, filename, showToast);
       showToast('PDF listo para revisar', 'success');
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error(err);
       showToast('Error al generar PDF', 'error');
     }
-  }
-
-  function showPdfPreview(blob, filename) {
-    const file = new File([blob], filename, { type: 'application/pdf' });
-    const objectUrl = URL.createObjectURL(file);
-    const overlay = document.createElement('section');
-    overlay.className = 'pdf-preview-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-label', `Vista previa de ${filename}`);
-
-    const header = document.createElement('header');
-    header.className = 'pdf-preview-header';
-    const closeButton = document.createElement('button');
-    closeButton.className = 'btn-icon';
-    closeButton.type = 'button';
-    closeButton.setAttribute('aria-label', 'Cerrar vista previa');
-    closeButton.textContent = '×';
-    const fileTitle = document.createElement('div');
-    fileTitle.className = 'pdf-preview-filename';
-    fileTitle.textContent = filename;
-    const actions = document.createElement('div');
-    actions.className = 'pdf-preview-actions';
-    const downloadLink = document.createElement('a');
-    downloadLink.className = 'btn btn-ghost btn-sm';
-    downloadLink.href = objectUrl;
-    downloadLink.download = filename;
-    downloadLink.textContent = 'Descargar';
-    const shareButton = document.createElement('button');
-    shareButton.className = 'btn btn-primary btn-sm';
-    shareButton.type = 'button';
-    shareButton.textContent = 'Compartir';
-    actions.append(downloadLink, shareButton);
-    header.append(closeButton, fileTitle, actions);
-
-    const frame = document.createElement('iframe');
-    frame.className = 'pdf-preview-frame';
-    frame.title = `Vista previa del archivo ${filename}`;
-    frame.src = objectUrl;
-    overlay.append(header, frame);
-    document.body.appendChild(overlay);
-
-    const close = () => {
-      overlay.remove();
-      URL.revokeObjectURL(objectUrl);
-      document.removeEventListener('keydown', onKeydown);
-    };
-    const onKeydown = (event) => { if (event.key === 'Escape') close(); };
-    closeButton.addEventListener('click', close);
-    document.addEventListener('keydown', onKeydown);
-    shareButton.addEventListener('click', async () => {
-      if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
-        showToast('Descarga el PDF para compartirlo desde tu dispositivo', 'warning', 4000);
-        return;
-      }
-      try {
-        await navigator.share({ files: [file], title: filename });
-      } catch (err) {
-        if (err.name !== 'AbortError') showToast('No se pudo abrir el menú para compartir', 'error');
-      }
-    });
   }
 
   // =========================================
